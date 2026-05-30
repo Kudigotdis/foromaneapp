@@ -181,7 +181,9 @@ function _renderPromoCard(p, imgMode) {
       var imgs = card.querySelectorAll('.promo-img[data-original-url]');
       for (var j = 0; j < imgs.length; j++) {
         (function(img) {
+          img.classList.add('promo-img-loading');
           imgMode.resolve(img.getAttribute('data-original-url')).then(function(resolved) {
+            img.classList.remove('promo-img-loading');
             if (resolved) img.src = resolved;
           });
         })(imgs[j]);

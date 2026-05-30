@@ -102,7 +102,11 @@ window.ForomaneMediaCache = ForomaneMediaCache;
 const FOROMANE_IMG_MODE = {
   current: localStorage.getItem('foromane_img_mode') || 'live',
 
+  _VISUAL: { live: 1, saved: 1 },
+  _TEXT: { 'text-mode': 1, lite: 1 },
+
   set(mode) {
+    var prev = this.current;
     this.current = mode;
     localStorage.setItem('foromane_img_mode', mode);
     this.updateUI();
@@ -111,7 +115,12 @@ const FOROMANE_IMG_MODE = {
       var names = { 'live': 'Live', 'text-mode': 'Text Mode', 'saved': 'Saved', 'lite': 'Lite' };
       label.textContent = names[mode] || mode;
     }
-    if (typeof renderPromos === 'function') renderPromos();
+    // In-place refresh when switching between visual modes (live ↔ saved)
+    if (this._VISUAL[prev] && this._VISUAL[mode]) {
+      this.refreshPromoImages();
+    } else if (typeof renderPromos === 'function') {
+      renderPromos();
+    }
   },
 
   getImgSrc(originalUrl) {
@@ -119,12 +128,18 @@ const FOROMANE_IMG_MODE = {
     if (originalUrl.startsWith('data:')) return originalUrl;
     if (this.current === 'live') return originalUrl;
     if (this.current === 'text-mode' || this.current === 'lite') return '';
-    if (this.current === 'saved') return 'assets/media/foromane_place_holder_image_blank.webp';
+    if (this.current === 'saved') {
+      if (location.protocol === 'file:' && !originalUrl.startsWith('http')) return originalUrl;
+      return 'assets/media/foromane_place_holder_image.webp';
+    }
     return 'assets/media/offline-mode-image.png';
   },
 
   needsAsyncResolve(originalUrl) {
-    return !!(originalUrl && !originalUrl.startsWith('data:') && this.current === 'saved');
+    if (!originalUrl || originalUrl.startsWith('data:')) return false;
+    if (this.current !== 'saved') return false;
+    if (location.protocol === 'file:' && !originalUrl.startsWith('http')) return false;
+    return true;
   },
 
   /**
@@ -141,10 +156,8 @@ const FOROMANE_IMG_MODE = {
     if (this.current === 'text-mode' || this.current === 'lite') return '';
 
     if (this.current === 'saved') {
-      // SMART FALLBACK: Check if it's already a local category asset
-      if (originalUrl.startsWith('assets/categories/')) {
-          return originalUrl;
-      }
+      if (originalUrl.startsWith('assets/categories/')) return originalUrl;
+      if (location.protocol === 'file:' && !originalUrl.startsWith('http')) return originalUrl;
 
       const result = await ForomaneMediaCache.get(originalUrl);
       if (result) return URL.createObjectURL(result.blob);
@@ -176,6 +189,29 @@ const FOROMANE_IMG_MODE = {
       var names = { 'live': 'Live', 'text-mode': 'Text Mode', 'saved': 'Saved', 'lite': 'Lite' };
       label.textContent = names[this.current] || this.current;
     }
+  },
+
+  refreshPromoImages() {
+    var cards = document.querySelectorAll('.promo-card');
+    if (!cards.length) return;
+    var self = this;
+    cards.forEach(function(card) {
+      var imgs = card.querySelectorAll('.promo-img');
+      imgs.forEach(function(img) {
+        var origUrl = img.getAttribute('data-original-url') || img.src;
+        if (!origUrl || origUrl.startsWith('data:') || origUrl.startsWith('assets/media/')) return;
+        if (!img.getAttribute('data-original-url')) img.setAttribute('data-original-url', origUrl);
+        var newSrc = self.getImgSrc(origUrl);
+        if (newSrc) img.src = newSrc;
+        if (self.needsAsyncResolve(origUrl)) {
+          img.classList.add('promo-img-loading');
+          self.resolve(origUrl).then(function(resolved) {
+            img.classList.remove('promo-img-loading');
+            if (resolved) img.src = resolved;
+          });
+        }
+      });
+    });
   }
 };
 
@@ -257,6 +293,14 @@ async function downloadPackage(type) {
   };
   try {
     await ForomaneDB.put('packages', pkg);
+    if (type === 'saved') {
+      showToast('Caching images...');
+      var statusEl = document.getElementById('media-cache-status');
+      if (statusEl) statusEl.textContent = 'Caching...';
+      await ForomaneMediaCache.cacheAll(promos, function(done, total) {
+        if (statusEl) statusEl.textContent = done + '/' + total;
+      });
+    }
     showToast(type === 'saved' ? 'Saved package downloaded!' : 'Lite package downloaded!');
     openDataModeModal();
   } catch(e) { console.error('Failed to save package:', e); showToast('Download failed'); }

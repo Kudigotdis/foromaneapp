@@ -309,6 +309,16 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
   display: block;
   background: var(--grey-light);
 }
+.promo-img-loading {
+  min-height: 200px;
+  background: linear-gradient(90deg, var(--grey-light) 25%, #e0e0e0 50%, var(--grey-light) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 .promo-details { display: none; padding: 14px 16px; }
 .promo-card.open .promo-details { display: block; animation: fadeUp 0.2s ease; }
 .promo-load-more { display: block; width: 100%; padding: 14px; margin-bottom: 10px; background: var(--grey-light); border: 1px dashed var(--grey-mid); border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--orange); cursor: pointer; text-align: center; transition: 0.15s; }
