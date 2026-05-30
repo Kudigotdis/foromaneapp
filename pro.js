@@ -560,7 +560,7 @@ window.openProProfile = function(proId) {
   var projHtml = '<div class="accordion"><div class="accordion-header" onclick="toggleAcc(this)"><span><i class="fas fa-images" style="color:var(--orange);margin-right:8px;"></i> Projects</span><span style="color:var(--orange);font-size:14px;font-weight:700;">' + portfolio.length + '</span></div><div class="accordion-body" style="padding:8px 12px;">' +
     (portfolio.length > 0
       ? portfolio.map(function(p) {
-          var imgHtml = p.image ? '<img src="' + p.image.replace(/'/g, "\\'") + '" alt="' + (p.title || '').replace(/'/g, "\\'") + '" style="width:100%;max-height:200px;object-fit:cover;border-radius:6px;margin-top:6px;">' : '';
+          var imgHtml = p.image ? '<img src="' + p.image.replace(/'/g, "\\'") + '" alt="' + (p.title || '').replace(/'/g, "\\'") + '" style="width:100%;max-height:200px;object-fit:cover;border-radius:6px;margin-top:6px;" loading="lazy">' : '';
           var videoHtml = p.videoUrl ? '<div style="margin-top:4px;"><a href="' + p.videoUrl.replace(/'/g, "\\'") + '" target="_blank" style="font-size:12px;color:var(--orange);"><i class="fab fa-facebook"></i> View Video</a></div>' : '';
           return '<div style="padding:10px 0;border-bottom:1px solid var(--grey-light);">' +
             '<div style="font-weight:600;font-size:14px;">' + p.title + '</div>' +
@@ -582,7 +582,7 @@ window.openProProfile = function(proId) {
   var proCol = listing.color || window.APP_COLORS[proInit.charCodeAt(0) % window.APP_COLORS.length];
   var proImgSrc = (profile && profile.image) || listing.image || null;
   var avatarHtml = proImgSrc
-    ? '<img src="' + proImgSrc.replace(/'/g, "\\'") + '" class="biz-avatar-img" style="object-fit:cover;" alt="">'
+    ? '<img src="' + proImgSrc.replace(/'/g, "\\'") + '" class="biz-avatar-img" style="object-fit:cover;" alt="" loading="lazy" width="80" height="80">'
     : '<div class="biz-avatar-img" style="background:' + proCol + ';">' + proInit + '</div>';
 
   // Split location for display
@@ -627,7 +627,7 @@ window.openProProfile = function(proId) {
   if (heartIcon) {
     heartIcon.setAttribute('onclick', "toggleFavBiz('" + proId + "')");
     var isFav = window.UserState && UserState.isFavourite(proId);
-    heartIcon.src = 'assets/icons/' + (isFav ? 'heart_active_icon' : 'heart_inactive_icon') + '.png';
+    heartIcon.src = 'assets/icons/' + (isFav ? 'heart_active_icon' : 'heart_inactive_icon') + '.webp';
   }
 
   if (window._onlineCounterInterval) clearInterval(window._onlineCounterInterval);

@@ -107,7 +107,7 @@ function renderProDashboard() {
   var projectsHtml = portfolio.length > 0
     ? portfolio.map(function(p, i) {
         var imgHtml = p.image
-          ? '<img src="' + p.image.replace(/'/g, "\\'") + '" alt="' + (p.title || '').replace(/'/g, "\\'") + '" onclick="window.open(\'' + p.image.replace(/'/g, "\\'") + '\',\'_blank\')">'
+          ? '<img src="' + p.image.replace(/'/g, "\\'") + '" alt="' + (p.title || '').replace(/'/g, "\\'") + '" onclick="window.open(\'' + p.image.replace(/'/g, "\\'") + '\',\'_blank\')" loading="lazy">'
           : '';
         var videoHtml = p.videoUrl
           ? '<div style="margin-top:4px;"><a href="' + p.videoUrl.replace(/'/g, "\\'") + '" target="_blank" style="font-size:12px;color:var(--orange);"><i class="fab fa-facebook"></i> View Video</a></div>'

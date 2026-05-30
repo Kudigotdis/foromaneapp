@@ -84,20 +84,29 @@ self.addEventListener('fetch', e => {
   if (e.request.destination === 'image' || e.request.url.match(/\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/)) {
     e.respondWith(
       caches.match(e.request).then(cachedResponse => {
-        const fetchPromise = fetch(e.request).then(networkResponse => {
-          caches.open(CACHE).then(cache => cache.put(e.request, networkResponse.clone()));
-          return networkResponse;
-        }).catch(() => cachedResponse);
+        const fetchPromise = fetch(e.request)
+          .then(networkResponse => {
+            if (e.request.method === 'GET') {
+              caches.open(CACHE).then(cache => {
+                try { cache.put(e.request, networkResponse.clone()); } catch (_) {}
+              }).catch(() => {});
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse);
         return cachedResponse || fetchPromise;
-      })
+      }).catch(() => fetch(e.request))
     );
     return;
   }
 
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(cache => cache.put(e.request, copy));
+      if (e.request.method === 'GET') {
+        caches.open(CACHE).then(cache => {
+          try { cache.put(e.request, res.clone()); } catch (_) {}
+        }).catch(() => {});
+      }
       return res;
     }).catch(() => caches.match('index.html')))
   );

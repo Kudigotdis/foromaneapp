@@ -172,13 +172,12 @@ function openBlogPost(slug) {
     '</div>' +
     '<hr style="border:none;border-top:1px solid var(--grey-light);margin:16px 0;">' +
     '<div class="blog-social-grid">' +
-      '<img src="assets/icons/facebook_icon_on.png" class="blog-social-icon" onclick="openFacebook(\'Foromane\')">' +
-      '<img src="assets/icons/Instagram_On.png" class="blog-social-icon" onclick="showToast(\'@foromane_bw\')">' +
-      '<img src="assets/icons/LinkedIn_On.png" class="blog-social-icon" onclick="showToast(\'Foromane Construction Hub\')">' +
-      '<img src="assets/icons/TikTok_On.png" class="blog-social-icon" onclick="showToast(\'@foromane_bw\')">' +
-      '<img src="assets/icons/Twitter_On.png" class="blog-social-icon" onclick="showToast(\'@foromane_bw\')">' +
-      '<img src="assets/icons/solid/share-nodes_whatsapp_green.webp" class="blog-social-icon" onclick="openWhatsApp(\'26772000002\',\'Foromane\')">' +
-      '<img src="assets/icons/YouTube_On.png" class="blog-social-icon" onclick="showToast(\'Foromane Construction Hub\')">' +
+      '<img src="assets/icons/facebook_icon_on.webp" class="blog-social-icon" onclick="openFacebook(\'Foromane\')">' +
+      '<img src="assets/icons/Instagram_On.webp" class="blog-social-icon" onclick="showToast(\'@foromane_bw\')">' +
+      '<img src="assets/icons/LinkedIn_On.webp" class="blog-social-icon" onclick="showToast(\'Foromane Construction Hub\')">' +
+      '<img src="assets/icons/TikTok_On.webp" class="blog-social-icon" onclick="showToast(\'@foromane_bw\')">' +
+      '<img src="assets/icons/Twitter_On.webp" class="blog-social-icon" onclick="showToast(\'@foromane_bw\')">' +
+      '<img src="assets/icons/YouTube_On.webp" class="blog-social-icon" onclick="showToast(\'Foromane Construction Hub\')">' +
     '</div>';
 
   goTo('view-blog-content');

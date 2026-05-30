@@ -15,6 +15,7 @@ const IMAGE_DIRS = [
   'assets/images/company_logos_dummy',
   'assets/categories',
   'assets/media',
+  'assets/icons',
 ];
 
 const KEEP_ORIGINAL = [
