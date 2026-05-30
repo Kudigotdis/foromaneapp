@@ -1,4 +1,4 @@
-const CACHE = 'foromane-v6';
+const CACHE = 'foromane-v7';
 const ASSETS = [
   './',
   'index.html',
@@ -74,41 +74,48 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.mode === 'navigate') {
+  var req = e.request;
+  if (req.mode === 'navigate') {
     e.respondWith(
-      caches.match(e.request).then(r => r || caches.match('index.html') || fetch(e.request)).catch(() => caches.match('index.html'))
+      caches.match(req).then(r => r || caches.match('index.html') || fetch(req)).catch(() => caches.match('index.html'))
     );
     return;
   }
 
-  if (e.request.destination === 'image' || e.request.url.match(/\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/)) {
+  var isImage = req.destination === 'image' || req.url.match(/\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/);
+  var isGET = req.method === 'GET';
+
+  if (isImage && isGET) {
     e.respondWith(
-      caches.match(e.request).then(cachedResponse => {
-        const fetchPromise = fetch(e.request)
-          .then(networkResponse => {
-            if (e.request.method === 'GET') {
-              caches.open(CACHE).then(cache => {
-                try { cache.put(e.request, networkResponse.clone()); } catch (_) {}
-              }).catch(() => {});
-            }
-            return networkResponse;
-          })
-          .catch(() => cachedResponse);
-        return cachedResponse || fetchPromise;
-      }).catch(() => fetch(e.request))
+      caches.match(req).then(cached => {
+        var fetchPromise = fetch(req).then(networkRes => {
+          if (!networkRes.bodyUsed) {
+            caches.open(CACHE).then(cache => {
+              try { cache.put(req, networkRes.clone()); } catch (_) {}
+            }).catch(function(){});
+          }
+          return networkRes;
+        }).catch(function(){ return cached; });
+        return cached || fetchPromise;
+      }).catch(function(){ return fetch(req); })
     );
+    return;
+  }
+
+  if (isImage && !isGET) {
+    e.respondWith(fetch(req));
     return;
   }
 
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-      if (e.request.method === 'GET') {
+    caches.match(req).then(r => r || fetch(req).then(res => {
+      if (isGET && !res.bodyUsed) {
         caches.open(CACHE).then(cache => {
-          try { cache.put(e.request, res.clone()); } catch (_) {}
-        }).catch(() => {});
+          try { cache.put(req, res.clone()); } catch (_) {}
+        }).catch(function(){});
       }
       return res;
-    }).catch(() => caches.match('index.html')))
+    }).catch(function(){ return caches.match('index.html'); }))
   );
 });
 
