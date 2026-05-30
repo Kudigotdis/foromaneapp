@@ -291,19 +291,22 @@ async function downloadPackage(type) {
       };
     })
   };
+  var btn = document.getElementById('download-btn-' + type);
   try {
     await ForomaneDB.put('packages', pkg);
     if (type === 'saved') {
-      showToast('Caching images...');
-      var statusEl = document.getElementById('media-cache-status');
-      if (statusEl) statusEl.textContent = 'Caching...';
+      if (btn) { btn.disabled = true; btn.innerHTML = 'Caching images...'; }
       await ForomaneMediaCache.cacheAll(promos, function(done, total) {
-        if (statusEl) statusEl.textContent = done + '/' + total;
+        if (btn) btn.innerHTML = 'Caching ' + done + '/' + total + '...';
       });
     }
     showToast(type === 'saved' ? 'Saved package downloaded!' : 'Lite package downloaded!');
     openDataModeModal();
-  } catch(e) { console.error('Failed to save package:', e); showToast('Download failed'); }
+  } catch(e) {
+    console.error('Failed to save package:', e);
+    showToast('Download failed');
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Retry'; }
+  }
 }
 
 async function deletePackage(type) {
@@ -313,6 +316,17 @@ async function deletePackage(type) {
     showToast('Package deleted');
     openDataModeModal();
   } catch(e) { console.error('Failed to delete package:', e); }
+}
+
+async function clearMediaCache() {
+  if (!window.ForomaneMediaCache) return;
+  try {
+    var info = await window.ForomaneMediaCache.getInfo();
+    if (!info || info.count === 0) { showToast('No cached media'); return; }
+    await window.ForomaneMediaCache.clear();
+    showToast('Cleared ' + info.count + ' cached images');
+    openDataModeModal();
+  } catch(e) { console.error('Failed to clear cache:', e); showToast('Failed to clear cache'); }
 }
 
 async function viewPackage(type) {
@@ -328,16 +342,24 @@ async function viewPackage(type) {
 }
 
 function estimatePackageSize(promos, type) {
-  var total = 0;
+  var textBytes = 0;
+  var imageCount = 0;
   (promos || []).forEach(function(p) {
-    total += (p.title || '').length;
-    total += (p.desc || '').length;
-    total += (p.businessName || '').length;
-    total += (p.location || '').length;
-    total += (p.category || '').length;
-    total += 20;
+    textBytes += (p.title || '').length;
+    textBytes += (p.desc || '').length;
+    textBytes += (p.businessName || '').length;
+    textBytes += (p.location || '').length;
+    textBytes += (p.category || '').length;
+    textBytes += 20;
+    if (type === 'saved' && p.images) {
+      p.images.forEach(function(img) {
+        if (img && !img.startsWith('data:')) imageCount++;
+      });
+    }
   });
-  return Math.max(0.1, Math.round(total / 1024 * 10) / 10);
+  var kb = textBytes / 1024 + imageCount * 150;
+  if (kb >= 1024) return (kb / 1024).toFixed(1) + ' MB';
+  return Math.round(kb) + ' KB';
 }
 
 async function openDataModeModal() {
@@ -370,6 +392,11 @@ async function openDataModeModal() {
     });
     html += '</div>';
   });
+  html += '<div class="section-title">Storage</div>';
+  html += '<div style="padding:0 16px 8px;font-size:11px;color:var(--grey-mid);">';
+  html += 'Cached media are stored in your browser for offline use.';
+  html += ' <button onclick="clearMediaCache()" style="background:none;border:none;color:var(--accent);text-decoration:underline;cursor:pointer;padding:0;font:inherit;">Clear all cached media</button>';
+  html += '</div>';
   body.innerHTML = html;
 
   ['saved', 'lite'].forEach(async function(type) {
@@ -377,8 +404,17 @@ async function openDataModeModal() {
     if (!container) return;
     var pkg = await getPackageInfo(type);
     if (pkg) {
+      var storageHtml = '';
+      if (type === 'saved' && window.ForomaneMediaCache) {
+        var info = await window.ForomaneMediaCache.getInfo();
+        if (info && info.count > 0) {
+          var s = info.totalSizeMB >= 1 ? info.totalSizeMB + ' MB' : Math.round(info.totalSizeBytes / 1024) + ' KB';
+          storageHtml = '<div style="font-size:10px;color:var(--grey-mid);margin-top:4px;">' + info.count + ' images cached \u00b7 ' + s + '</div>';
+        }
+      }
       container.innerHTML =
         '<span style="font-size:11px;color:var(--grey-mid);">Week ' + pkg.week + ' - ' + pkg.month + '</span>' +
+        storageHtml +
         '<div style="display:flex;gap:8px;margin-top:6px;">' +
         '<button class="btn-download" onclick="viewPackage(\'' + type + '\')" style="flex:1;justify-content:center;">View</button>' +
         '<button class="btn-download" onclick="deletePackage(\'' + type + '\')" style="flex:1;justify-content:center;background:transparent;color:var(--grey-dark);">Delete</button>' +
@@ -388,9 +424,9 @@ async function openDataModeModal() {
       var week = getCurrentWeekOfMonth();
       var month = getMonthName();
       container.innerHTML =
-        '<button class="btn-download" onclick="event.stopPropagation();downloadPackage(\'' + type + '\')">' +
+        '<button class="btn-download" id="download-btn-' + type + '" onclick="event.stopPropagation();downloadPackage(\'' + type + '\')">' +
           '<svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>' +
-          'Download Week ' + week + ' - ' + month + ' (' + size + 'mb)' +
+          'Download Week ' + week + ' - ' + month + ' (' + size + ')' +
         '</button>';
     }
   });
@@ -412,5 +448,6 @@ window.viewPackage = viewPackage;
 window.estimatePackageSize = estimatePackageSize;
 window.openDataModeModal = openDataModeModal;
 window.selectDataMode = selectDataMode;
+window.clearMediaCache = clearMediaCache;
 
 
