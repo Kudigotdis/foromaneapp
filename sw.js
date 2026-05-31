@@ -88,15 +88,14 @@ self.addEventListener('fetch', e => {
   if (isImage && isGET) {
     e.respondWith(
       caches.match(req).then(cached => {
-        var fetchPromise = fetch(req).then(networkRes => {
-          if (!networkRes.bodyUsed) {
-            caches.open(CACHE).then(cache => {
-              try { cache.put(req, networkRes.clone()); } catch (_) {}
-            }).catch(function(){});
-          }
+        if (cached) return cached;
+        return fetch(req).then(networkRes => {
+          var cloned = networkRes.clone();
+          caches.open(CACHE).then(cache => {
+            try { cache.put(req, cloned); } catch (_) {}
+          }).catch(function(){});
           return networkRes;
-        }).catch(function(){ return cached; });
-        return cached || fetchPromise;
+        }).catch(function(){ return caches.match(req); });
       }).catch(function(){ return fetch(req); })
     );
     return;
@@ -109,9 +108,10 @@ self.addEventListener('fetch', e => {
 
   e.respondWith(
     caches.match(req).then(r => r || fetch(req).then(res => {
-      if (isGET && !res.bodyUsed) {
+      if (req.method === 'GET' && res.ok && !res.bodyUsed) {
+        var cloned = res.clone();
         caches.open(CACHE).then(cache => {
-          try { cache.put(req, res.clone()); } catch (_) {}
+          try { cache.put(req, cloned); } catch (_) {}
         }).catch(function(){});
       }
       return res;
