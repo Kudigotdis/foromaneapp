@@ -15,10 +15,12 @@ async function _getFirebase() {
     var st = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
 
     var app = fa.initializeApp(window.firebaseConfig);
+    var auth = au.getAuth(app);
+    au.signInAnonymously(auth).catch(function(){});
     _firebase = {
       app: app,
       db: fs.getFirestore(app),
-      auth: au.getAuth(app),
+      auth: auth,
       storage: st.getStorage(app),
       firestore: fs,
       authModule: au,
