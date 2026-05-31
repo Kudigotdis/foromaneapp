@@ -16,7 +16,7 @@ async function _getFirebase() {
 
     var app = fa.initializeApp(window.firebaseConfig);
     var auth = au.getAuth(app);
-    au.signInAnonymously(auth).catch(function(){});
+    await au.signInAnonymously(auth).catch(function(){});
     _firebase = {
       app: app,
       db: fs.getFirestore(app),
