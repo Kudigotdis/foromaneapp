@@ -5,6 +5,8 @@
 class AdminData {
   constructor() {
     this.refresh();
+    var self = this;
+    setTimeout(function() { self.runMaintenance(); }, 0);
   }
 
   refresh() {
@@ -47,6 +49,42 @@ class AdminData {
     } catch (e) {
       console.error("Failed to fetch Firestore data for Admin:", e);
     }
+  }
+
+  runMaintenance() {
+    if (!window.ForomaneCadence) return;
+    if (!window.ForomaneCadence.isMaintenanceWindow()) return;
+    var logKey = 'foromane_maintenance_log';
+    var now = new Date();
+    var monthKey = now.getMonth() + '-' + now.getFullYear();
+    var log = JSON.parse(localStorage.getItem(logKey) || '{}');
+    if (log[monthKey]) return;
+
+    var purged = 0;
+    this.promos = (window._promos || []).filter(function(p) {
+      if (p.promo && p.promo.expiresAt) {
+        if (new Date(p.promo.expiresAt) < now) { purged++; return false; }
+      }
+      return true;
+    });
+    window._promos = this.promos;
+    localStorage.setItem('foromane_promos', JSON.stringify(this.promos));
+
+    localStorage.setItem('foromane_boosts_remaining', '12');
+
+    var expiredPros = 0;
+    (this.profiles || []).forEach(function(u) {
+      if (u.role === 'Pro' || u.role === 'Professional') {
+        if (u.credentialsExpireAt && new Date(u.credentialsExpireAt) < now) {
+          u.role = 'General User';
+          expiredPros++;
+        }
+      }
+    });
+
+    log[monthKey] = { ranAt: now.toISOString(), purged: purged, expiredPros: expiredPros };
+    localStorage.setItem(logKey, JSON.stringify(log));
+    this.refresh();
   }
 
   // === UNIFIED REQUESTS ===

@@ -62,8 +62,31 @@ function renderNotes() {
       (used > maxFree ? ' — ' + (used - maxFree) + ' bonus' : '');
   }
 
+  var bulkHtml = '';
+  if (window.ForomaneCadence) {
+    var cd = window.ForomaneCadence.getCurrentCadenceDay();
+    if (cd === 'monday' && userNotes.length > 0) {
+      var allItems = [];
+      userNotes.forEach(function(n) {
+        (n.items || []).forEach(function(it) {
+          allItems.push({ title: it.title, qty: it.qty || 1, price: it.price, business: it.business, noteTitle: n.title });
+        });
+      });
+      if (allItems.length > 0) {
+        var totalQty = allItems.reduce(function(s, i) { return s + i.qty; }, 0);
+        var totalCost = allItems.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+        bulkHtml = '<div style="background:#fff3e0;border:1px solid var(--orange);border-radius:6px;padding:12px;margin-bottom:12px;">' +
+          '<div style="font-size:13px;font-weight:600;color:var(--orange);margin-bottom:6px;">\ud83d\udce6 Bulk Order Summary \u2014 Monday Sourcing</div>' +
+          '<div style="font-size:12px;color:var(--grey-dark);">' + allItems.length + ' material' + (allItems.length !== 1 ? 's' : '') + ' needed across ' + userNotes.length + ' note' + (userNotes.length !== 1 ? 's' : '') + ' \u00b7 Total qty: ' + totalQty + ' \u00b7 P' + totalCost.toFixed(2) + '</div>' +
+          '<div style="font-size:11px;color:var(--grey-mid);margin-top:4px;">' + allItems.map(function(i) { return i.title + ' \u00d7' + i.qty + ' (' + i.business + ')'; }).join(' | ') + '</div>' +
+          '<button class="btn-sm" style="margin-top:8px;background:var(--orange);color:#fff;border:none;" onclick="shareBulkOrderSummary()">Share via WhatsApp</button>' +
+          '</div>';
+      }
+    }
+  }
+
   if (userNotes.length === 0) {
-    el.innerHTML = `
+    el.innerHTML = bulkHtml + `
       <div style="text-align:center;padding:40px 16px;color:var(--grey-dark);">
         <p style="font-size:14px;font-weight:600;margin-bottom:4px;">No notes yet.</p>
       </div>
@@ -71,7 +94,7 @@ function renderNotes() {
     return;
   }
 
-  el.innerHTML = userNotes.map((note, index) => {
+  el.innerHTML = bulkHtml + userNotes.map((note, index) => {
     const total = note.items.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
     const count = note.items.reduce((sum, item) => sum + (item.qty || 1), 0);
     return `
@@ -393,6 +416,28 @@ function openNoteItemView(noteId, itemIdx) {
   }, 0);
 }
 
+function shareBulkOrderSummary() {
+  var uid = UserState.id;
+  var userNotes = (window._notes || []).filter(function(n) { return n.userId === uid; });
+  var allItems = [];
+  userNotes.forEach(function(n) {
+    (n.items || []).forEach(function(it) {
+      allItems.push({ title: it.title, qty: it.qty || 1, price: it.price, business: it.business, noteTitle: n.title });
+    });
+  });
+  if (allItems.length === 0) { showToast('No items to share'); return; }
+  var totalQty = allItems.reduce(function(s, i) { return s + i.qty; }, 0);
+  var totalCost = allItems.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+  var text = '*Bulk Order Summary* \u2014 ' + new Date().toLocaleDateString() + '\n\n';
+  allItems.forEach(function(i, idx) {
+    text += (idx + 1) + '. ' + i.title + ' \u00d7' + i.qty + ' = P' + (i.price * i.qty).toFixed(2) + ' (' + i.business + ')\n';
+  });
+  text += '\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n';
+  text += 'Total: P' + totalCost.toFixed(2) + ' (' + totalQty + ' units across ' + allItems.length + ' items)';
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+window.shareBulkOrderSummary = shareBulkOrderSummary;
 window.renderNotes = renderNotes;
 window.openNote = openNote;
 window.createNote = createNote;

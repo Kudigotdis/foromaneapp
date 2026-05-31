@@ -1154,7 +1154,20 @@ window.rejectRequestPrompt = rejectRequestPrompt;
 
 // ─── BOOST COUNTER HELPERS ───
 window.getBoostCounter = function() {
-  return Math.max(0, parseInt(localStorage.getItem('foromane_boosts_remaining') || '12', 10));
+  var b = parseInt(localStorage.getItem('foromane_boosts_remaining') || '12', 10);
+  if (window.ForomaneCadence && window.ForomaneCadence.isMaintenanceWindow()) {
+    if (b < 12) {
+      b = 12;
+      localStorage.setItem('foromane_boosts_remaining', '12');
+      var _lm = localStorage.getItem('foromane_boost_last_reset') || '';
+      var _thisMonth = new Date().getMonth() + '-' + new Date().getFullYear();
+      if (_lm !== _thisMonth) {
+        localStorage.setItem('foromane_boost_last_reset', _thisMonth);
+        showToast('Boosts reset to 12 for the new month');
+      }
+    }
+  }
+  return Math.max(0, b);
 };
 
 window.decrementBoostCounter = function() {

@@ -899,6 +899,16 @@
 
       if (_artworkItems.length === 0) { showToast('Please add at least 1 image (max 12)'); return; }
 
+      if (window.ForomaneCadence) {
+        var cd = window.ForomaneCadence.getCurrentCadenceDay();
+        if (cd === 'off' || cd === 'maintenance') {
+          var next = window.ForomaneCadence.getNextCadenceDay();
+          var msg = 'Artwork goes live on Mon/Wed/Fri. Your submission will appear on the next cadence day';
+          if (next) msg += ' (' + window.ForomaneCadence.formatShortDate(next) + ')';
+          if (!confirm(msg + '.\n\nSubmit anyway?')) return;
+        }
+      }
+
       const missing = [];
       _artworkItems.forEach((item, idx) => {
         const errs = [];

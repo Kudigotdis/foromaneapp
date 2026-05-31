@@ -269,6 +269,40 @@ function renderAnalytics(range) {
         '<div class="analytics-stat-card"><div class="analytics-stat-num">' + bestDay + '</div><div class="analytics-stat-label">Best day (reach)</div></div>' +
       '</div>' +
       '<div class="analytics-list-row"><div><div>Estimated reach this month</div><div class="analytics-list-row-sub">From all categories</div></div><div class="analytics-list-row-right" style="color:#378ADD;">~' + (totalViews * 3) + '</div></div>' +
+      // Cadence performance
+      '<div class="analytics-section-divider"></div>' +
+      '<div class="analytics-section-head">CADENCE PERFORMANCE</div>' +
+      (function() {
+        if (!window.ForomaneCadence || ranged.length === 0) return '<div style="font-size:12px;color:var(--grey-dark);padding:8px 0;">No cadence data yet.</div>';
+        var dayStats = { monday: { views: 0, likes: 0, count: 0 }, wednesday: { views: 0, likes: 0, count: 0 }, friday: { views: 0, likes: 0, count: 0 } };
+        ranged.forEach(function(p) {
+          var d = new Date(p.promo ? p.promo.submittedAt || p.createdAt : p.createdAt);
+          var fd = window.ForomaneCadence.getDayFocus(d);
+          if (!fd || fd === 'maintenance') return;
+          var key = fd === 'bulk' ? 'monday' : fd === 'trades' ? 'wednesday' : fd === 'diy' ? 'friday' : null;
+          if (!key) return;
+          dayStats[key].views += (p.kpi && p.kpi.views) || 0;
+          dayStats[key].likes += (p.kpi && p.kpi.likes) || 0;
+          dayStats[key].count++;
+        });
+        var bestDay = '—', bestViews = 0;
+        ['monday', 'wednesday', 'friday'].forEach(function(k) {
+          var avg = dayStats[k].count > 0 ? dayStats[k].views / dayStats[k].count : 0;
+          if (avg > bestViews) { bestViews = avg; bestDay = k.charAt(0).toUpperCase() + k.slice(1); }
+        });
+        var labels = { monday: 'Monday (Bulk)', wednesday: 'Wednesday (Trades)', friday: 'Friday (DIY)' };
+        var totalBoostsUsed = 12 - parseInt(localStorage.getItem('foromane_boosts_remaining') || '12', 10);
+        return '<div class="analytics-stat-row">' +
+          '<div class="analytics-stat-card"><div class="analytics-stat-num">' + bestDay + '</div><div class="analytics-stat-label">Best-performing day</div></div>' +
+          '<div class="analytics-stat-card"><div class="analytics-stat-num">' + totalBoostsUsed + '/12</div><div class="analytics-stat-label">Cadence completion</div></div>' +
+        '</div>' +
+        ['monday', 'wednesday', 'friday'].map(function(k) {
+          var s = dayStats[k];
+          var avgViews = s.count > 0 ? Math.round(s.views / s.count) : 0;
+          var avgLikes = s.count > 0 ? Math.round(s.likes / s.count) : 0;
+          return '<div class="analytics-list-row"><div><div>' + labels[k] + '</div><div class="analytics-list-row-sub">' + s.count + ' promos</div></div><div style="text-align:right"><div class="analytics-list-row-right" style="color:var(--orange);">' + avgViews + ' avg views</div><div style="font-size:11px;color:var(--grey-dark);">' + avgLikes + ' avg likes</div></div></div>';
+        }).join('');
+      })() +
       // Directory & Sharing
       '<div class="analytics-section-divider"></div>' +
       '<div class="analytics-section-head">DIRECTORY &amp; SHARING</div>' +

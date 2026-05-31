@@ -206,7 +206,20 @@ function renderPromos() {
   }
 
   const imgMode = getPromoImgMode();
-  const promos = (typeof applyFilters === 'function') ? applyFilters() : (window._promos || []);
+  var promos = (typeof applyFilters === 'function') ? applyFilters() : (window._promos || []);
+
+  if (window.ForomaneCadence) {
+    var dayCats = window.ForomaneCadence.getCurrentDayCategories();
+    if (dayCats.length > 0) {
+      promos = promos.slice().sort(function(a, b) {
+        var aMatch = dayCats.indexOf(a.category) >= 0 || dayCats.indexOf(a.businessName) >= 0;
+        var bMatch = dayCats.indexOf(b.category) >= 0 || dayCats.indexOf(b.businessName) >= 0;
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0;
+      });
+    }
+  }
 
   if (promos.length === 0) {
     if (currentCountry === 'zimbabwe') {

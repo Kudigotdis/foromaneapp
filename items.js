@@ -690,6 +690,16 @@ function updatePromoCost() {
 }
 
 async function submitPromo() {
+  if (window.ForomaneCadence) {
+    var cd = window.ForomaneCadence.getCurrentCadenceDay();
+    if (cd === 'off' || cd === 'maintenance') {
+      var next = window.ForomaneCadence.getNextCadenceDay();
+      var msg = 'Promos go live on Mon/Wed/Fri. Your promo will appear on the next cadence day';
+      if (next) msg += ' (' + window.ForomaneCadence.formatShortDate(next) + ')';
+      if (!confirm(msg + '.\n\nSubmit anyway?')) return;
+    }
+  }
+
   const title = document.getElementById('promo-item-title').value.trim();
   const desc = document.getElementById('promo-item-desc').value.trim();
   const promoType = document.getElementById('promo-type').value;
