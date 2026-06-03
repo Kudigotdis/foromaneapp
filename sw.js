@@ -1,4 +1,4 @@
-const CACHE = 'foromane-v8';
+const CACHE = 'foromane-v9';
 const ASSETS = [
   './',
   'index.html',
@@ -54,8 +54,7 @@ const ASSETS = [
   'ui-styles.css',
   'sw-register.js',
   'drive-api.js',
-  'google-config.js',
-  'botswana_locations.json'
+  'google-config.js'
 ];
 
 self.addEventListener('install', e => {
@@ -74,9 +73,18 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   var req = e.request;
+
+  /* ── Navigate → always return a real Response ── */
   if (req.mode === 'navigate') {
     e.respondWith(
-      caches.match(req).then(r => r || caches.match('index.html') || fetch(req)).catch(() => caches.match('index.html'))
+      caches.match('index.html').then(function(r) {
+        return r || fetch(req).catch(function() {
+          return new Response(
+            '<!DOCTYPE html><meta charset="utf-8"><title>Foromane</title><body>Offline',
+            { status: 200, headers: { 'Content-Type': 'text/html;charset=utf-8' } }
+          );
+        });
+      })
     );
     return;
   }
@@ -84,37 +92,45 @@ self.addEventListener('fetch', e => {
   var isImage = req.destination === 'image' || req.url.match(/\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/);
   var isGET = req.method === 'GET';
 
+  /* ── Images ── */
   if (isImage && isGET) {
     e.respondWith(
-      caches.match(req).then(cached => {
+      caches.match(req).then(function(cached) {
         if (cached) return cached;
-        return fetch(req).then(networkRes => {
+        return fetch(req).then(function(networkRes) {
           var cloned = networkRes.clone();
-          caches.open(CACHE).then(cache => {
+          caches.open(CACHE).then(function(cache) {
             try { cache.put(req, cloned); } catch (_) {}
           }).catch(function(){});
           return networkRes;
-        }).catch(function(){ return caches.match(req); });
-      }).catch(function(){ return fetch(req); })
+        }).catch(function(){ return caches.match(req).then(function(r){ return r || new Response('',{status:504}); }); });
+      }).catch(function(){ return fetch(req).catch(function(){ return new Response('',{status:504}); }); })
     );
     return;
   }
 
   if (isImage && !isGET) {
-    e.respondWith(fetch(req));
+    e.respondWith(fetch(req).catch(function(){ return new Response('',{status:504}); }));
     return;
   }
 
+  /* ── Everything else ── */
   e.respondWith(
-    caches.match(req).then(r => r || fetch(req).then(res => {
-      if (req.method === 'GET' && res.ok && !res.bodyUsed) {
-        var cloned = res.clone();
-        caches.open(CACHE).then(cache => {
-          try { cache.put(req, cloned); } catch (_) {}
-        }).catch(function(){});
-      }
-      return res;
-    }).catch(function(){ return caches.match('index.html'); }))
+    caches.match(req).then(function(r) {
+      return r || fetch(req).then(function(res) {
+        if (req.method === 'GET' && res.ok && !res.bodyUsed) {
+          var cloned = res.clone();
+          caches.open(CACHE).then(function(cache) {
+            try { cache.put(req, cloned); } catch (_) {}
+          }).catch(function(){});
+        }
+        return res;
+      }).catch(function() {
+        return caches.match('index.html').then(function(r) {
+          return r || new Response('', { status: 504 });
+        });
+      });
+    })
   );
 });
 
