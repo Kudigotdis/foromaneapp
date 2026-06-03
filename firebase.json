@@ -17,7 +17,7 @@
       "*.ps1",
       "foromane-config*.json",
       "drive-*.json",
-      "locations.json"
+      "botswana_locations.json"
     ],
     "rewrites": [
       { "source": "**", "destination": "/index.html" }

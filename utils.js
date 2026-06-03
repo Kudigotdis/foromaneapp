@@ -19,23 +19,27 @@ function toggleAcc(header) {
 
 function openModal(id) {
   document.getElementById(id).classList.add('open');
-  if (id === 'register-modal') {
-    const preview = document.getElementById('reg-photo-preview');
-    const placeholder = document.getElementById('reg-photo-placeholder');
-    if (preview) { preview.src = ''; preview.style.display = 'none'; }
-    if (placeholder) placeholder.style.display = 'flex';
-    document.getElementById('reg-photo-input').value = '';
-    localStorage.removeItem('foromane_reg_photo');
-    const savedGender = UserState.gender || localStorage.getItem('foromane_gender');
-    if (savedGender) {
-      document.querySelectorAll('#register-modal .gender-btn').forEach(b => {
-        b.classList.toggle('active', b.textContent.trim() === savedGender);
-      });
-    }
-    if (typeof renderRegMobileEntries === 'function') renderRegMobileEntries();
-    if (typeof renderRegWhatsAppEntries === 'function') renderRegWhatsAppEntries();
-    if (typeof updateRegTally === 'function') updateRegTally();
+}
+
+function initRegisterView() {
+  const preview = document.getElementById('reg-photo-preview');
+  const placeholder = document.getElementById('reg-photo-placeholder');
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  if (placeholder) placeholder.style.display = 'flex';
+  const photoInput = document.getElementById('reg-photo-input');
+  if (photoInput) photoInput.value = '';
+  localStorage.removeItem('foromane_reg_photo');
+  const savedGender = UserState.gender || localStorage.getItem('foromane_gender');
+  if (savedGender) {
+    document.querySelectorAll('#view-register .gender-btn').forEach(function(b) {
+      b.classList.toggle('active', b.textContent.trim() === savedGender);
+    });
   }
+  if (typeof renderRegMobileEntries === 'function') renderRegMobileEntries();
+  if (typeof renderRegWhatsAppEntries === 'function') renderRegWhatsAppEntries();
+  if (typeof updateRegTally === 'function') updateRegTally();
+  if (typeof initRaceChips === 'function') initRaceChips();
+  if (typeof populateDobDropdowns === 'function') populateDobDropdowns();
 }
 
 function closeModal(id) {
@@ -197,3 +201,14 @@ function buildAZGridHTML() {
     '</div>';
 }
 window.buildAZGridHTML = buildAZGridHTML;
+
+window.togglePasswordVisibility = function(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  const icon = btn.querySelector('i');
+  if (icon) {
+    icon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+  }
+};

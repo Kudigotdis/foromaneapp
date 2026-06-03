@@ -317,3 +317,76 @@ window.fetchPendingOnboarding = fetchPendingOnboarding;
 window.approveOnboarding = approveOnboarding;
 window.recordInteraction = recordInteraction;
 window.fetchUserBusiness = fetchUserBusiness;
+
+// ==========================================
+// 7. BRAND REGISTRY SYNC
+// ==========================================
+
+async function syncBrandSubmission(brandName, userId, userEmail) {
+  var fb = await _getFirebase();
+  if (!fb) return null;
+  try {
+    var col = fb.firestore.collection(fb.db, 'brand_registry');
+    var q = fb.firestore.query(
+      col,
+      fb.firestore.where('brand', '==', brandName.toLowerCase().trim())
+    );
+    var snap = await fb.firestore.getDocs(q);
+    if (snap.empty) {
+      var docRef = await fb.firestore.addDoc(col, {
+        brand: brandName.toLowerCase().trim(),
+        displayName: brandName.trim(),
+        submittedBy: userId || 'anonymous',
+        submittedByEmail: userEmail || '',
+        submittedAt: fb.firestore.serverTimestamp(),
+        addedByUserIds: [userId || 'anonymous'],
+        verified: false
+      });
+      return { id: docRef.id, added: true };
+    } else {
+      var doc = snap.docs[0];
+      var data = doc.data();
+      var addedBy = data.addedByUserIds || [];
+      if (!addedBy.includes(userId || 'anonymous')) {
+        addedBy.push(userId || 'anonymous');
+      }
+      var verified = addedBy.length >= 25;
+      await fb.firestore.updateDoc(fb.firestore.doc(fb.db, 'brand_registry', doc.id), {
+        addedByUserIds: addedBy,
+        verified: verified,
+        lastUpdated: fb.firestore.serverTimestamp()
+      });
+      return { id: doc.id, added: false, verified: verified, count: addedBy.length };
+    }
+  } catch (e) {
+    console.warn('Brand sync to Firestore failed:', e.message);
+    return null;
+  }
+}
+
+async function loadVerifiedBrands() {
+  var fb = await _getFirebase();
+  if (!fb) return [];
+  try {
+    var col = fb.firestore.collection(fb.db, 'brand_registry');
+    var q = fb.firestore.query(col, fb.firestore.where('verified', '==', true));
+    var snap = await fb.firestore.getDocs(q);
+    var brands = [];
+    snap.forEach(function(doc) {
+      var d = doc.data();
+      brands.push({
+        name: d.displayName || d.brand,
+        categories: d.categories || [],
+        firestoreId: doc.id,
+        verified: true
+      });
+    });
+    return brands;
+  } catch (e) {
+    console.warn('Could not load verified brands from Firestore:', e.message);
+    return [];
+  }
+}
+
+window.syncBrandSubmission = syncBrandSubmission;
+window.loadVerifiedBrands = loadVerifiedBrands;

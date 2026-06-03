@@ -25,7 +25,40 @@ window.SAMPLE_BUSINESSES = [
     "public": true,
     "cataloguePublic": true,
     "description": "High-end Kitchen & Wardrobe Design â€” Botswana's leading specialist in custom kitchen joinery, wardrobes, and fitted furniture.",
-    "subscription": "full"
+    "subscription": "full",
+    "retailHours": {
+      "branches": [
+        {
+          "name": "Main Branch",
+          "hours": [
+            { "day": "monday", "open": "07:30", "breakStart": "12:00", "breakEnd": "13:00", "close": "17:00", "closed": false },
+            { "day": "tuesday", "open": "07:30", "breakStart": "12:00", "breakEnd": "13:00", "close": "17:00", "closed": false },
+            { "day": "wednesday", "open": "07:30", "breakStart": "12:00", "breakEnd": "13:00", "close": "17:00", "closed": false },
+            { "day": "thursday", "open": "07:30", "breakStart": "12:00", "breakEnd": "13:00", "close": "17:00", "closed": false },
+            { "day": "friday", "open": "07:30", "breakStart": "12:00", "breakEnd": "13:00", "close": "17:00", "closed": false },
+            { "day": "saturday", "open": "08:00", "breakStart": null, "breakEnd": null, "close": "13:00", "closed": false },
+            { "day": "sunday", "open": null, "breakStart": null, "breakEnd": null, "close": null, "closed": true }
+          ],
+          "exceptions": [
+            { "date": "2026-09-30", "label": "Botswana Independence Day", "open": null, "close": null, "closed": true },
+            { "date": "2026-12-25", "label": "Christmas Day", "open": null, "close": null, "closed": true }
+          ]
+        },
+        {
+          "name": "Showroom",
+          "hours": [
+            { "day": "monday", "open": "09:00", "breakStart": null, "breakEnd": null, "close": "16:00", "closed": false },
+            { "day": "tuesday", "open": "09:00", "breakStart": null, "breakEnd": null, "close": "16:00", "closed": false },
+            { "day": "wednesday", "open": "09:00", "breakStart": null, "breakEnd": null, "close": "16:00", "closed": false },
+            { "day": "thursday", "open": "09:00", "breakStart": null, "breakEnd": null, "close": "16:00", "closed": false },
+            { "day": "friday", "open": "09:00", "breakStart": null, "breakEnd": null, "close": "16:00", "closed": false },
+            { "day": "saturday", "open": null, "breakStart": null, "breakEnd": null, "close": null, "closed": true },
+            { "day": "sunday", "open": null, "breakStart": null, "breakEnd": null, "close": null, "closed": true }
+          ],
+          "exceptions": []
+        }
+      ]
+    }
   },
   {
     "id": "biz-2",
@@ -46,7 +79,24 @@ window.SAMPLE_BUSINESSES = [
     "public": true,
     "cataloguePublic": true,
     "description": "",
-    "subscription": "full"
+    "subscription": "full",
+    "retailHours": {
+      "branches": [
+        {
+          "name": "Main Branch",
+          "hours": [
+            { "day": "monday", "open": "08:00", "breakStart": "13:00", "breakEnd": "14:00", "close": "17:00", "closed": false },
+            { "day": "tuesday", "open": "08:00", "breakStart": "13:00", "breakEnd": "14:00", "close": "17:00", "closed": false },
+            { "day": "wednesday", "open": "08:00", "breakStart": "13:00", "breakEnd": "14:00", "close": "17:00", "closed": false },
+            { "day": "thursday", "open": "08:00", "breakStart": "13:00", "breakEnd": "14:00", "close": "17:00", "closed": false },
+            { "day": "friday", "open": "08:00", "breakStart": "13:00", "breakEnd": "14:00", "close": "17:00", "closed": false },
+            { "day": "saturday", "open": "08:00", "breakStart": null, "breakEnd": null, "close": "13:00", "closed": false },
+            { "day": "sunday", "open": null, "breakStart": null, "breakEnd": null, "close": null, "closed": true }
+          ],
+          "exceptions": []
+        }
+      ]
+    }
   },
   {
     "id": "biz-3",
@@ -65,7 +115,28 @@ window.SAMPLE_BUSINESSES = [
     "public": true,
     "cataloguePublic": true,
     "description": "",
-    "subscription": "full"
+    "subscription": "full",
+    "retailHours": {
+      "branches": [
+        {
+          "name": "Steel Yard",
+          "hours": [
+            { "day": "monday", "open": "07:00", "breakStart": null, "breakEnd": null, "close": "18:00", "closed": false },
+            { "day": "tuesday", "open": "07:00", "breakStart": null, "breakEnd": null, "close": "18:00", "closed": false },
+            { "day": "wednesday", "open": "07:00", "breakStart": null, "breakEnd": null, "close": "18:00", "closed": false },
+            { "day": "thursday", "open": "07:00", "breakStart": null, "breakEnd": null, "close": "18:00", "closed": false },
+            { "day": "friday", "open": "07:00", "breakStart": null, "breakEnd": null, "close": "18:00", "closed": false },
+            { "day": "saturday", "open": "07:00", "breakStart": null, "breakEnd": null, "close": "14:00", "closed": false },
+            { "day": "sunday", "open": null, "breakStart": null, "breakEnd": null, "close": null, "closed": true }
+          ],
+          "exceptions": [
+            { "date": "2026-04-10", "label": "Good Friday", "open": null, "close": null, "closed": true },
+            { "date": "2026-04-13", "label": "Easter Monday", "open": null, "close": null, "closed": true },
+            { "date": "2026-05-01", "label": "Labour Day", "open": null, "close": null, "closed": true }
+          ]
+        }
+      ]
+    }
   },
   {
     "id": "biz-4",
@@ -1719,6 +1790,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-1",
     "title": "Meranti Planks 22x144mm",
+    "brand": "SupaWood",
     "desc": "High-quality Meranti timber for structural and finishing work.",
     "basePrice": 85,
     "price": 85,
@@ -1761,6 +1833,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-3",
     "title": "Postform Top - Glacier White 3000mm",
+    "brand": "SupaWood",
     "desc": "Durable laminate countertop, ready to install.",
     "basePrice": 450,
     "price": 450,
@@ -1803,6 +1876,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-5",
     "title": "PVC Foil - Oak Woodgrain",
+    "brand": "SupaWood",
     "desc": "Self-adhesive foil for furniture and wall covering.",
     "basePrice": 89,
     "price": 89,
@@ -1824,6 +1898,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-6",
     "title": "Dulux Trade Emulsion 20L",
+    "brand": "Dulux",
     "desc": "Matte finish interior wall paint, low VOC.",
     "basePrice": 520,
     "price": 520,
@@ -1845,6 +1920,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-7",
     "title": "Enamel Gloss Paint - Jet Black 1L",
+    "brand": "Dulux",
     "desc": "High gloss enamel for metal and wood.",
     "basePrice": 98,
     "price": 98,
@@ -1929,6 +2005,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-11",
     "title": "I-Beam 150mm x 6m",
+    "brand": "Forge",
     "desc": "Structural steel beam for heavy loads.",
     "basePrice": 1450,
     "price": 1450,
@@ -1950,6 +2027,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-12",
     "title": "Rebar 12mm x 6m",
+    "brand": "Forge",
     "desc": "Reinforcing steel for concrete.",
     "basePrice": 85,
     "price": 85,
@@ -1971,6 +2049,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-13",
     "title": "Galvanised Sheet 0.5mm x 2.4m",
+    "brand": "Forge",
     "desc": "Corrosion-resistant steel sheet.",
     "basePrice": 320,
     "price": 320,
@@ -1992,6 +2071,7 @@ window.DEMO_CATALOGUE_ITEMS = [
   {
     "id": "cat_prod-14",
     "title": "Angle Iron 50x50x5mm x 6m",
+    "brand": "Forge",
     "desc": "Mild steel angle for framing and brackets.",
     "basePrice": 410,
     "price": 410,
@@ -29160,6 +29240,96 @@ window.DEMO_NOTES = [
         "business": "Tile Express BW",
         "qty": 3
       }
+    ]
+  }
+];
+
+window.DEMO_PROMO_NOTES = [
+  {
+    id: 'promo-note-cottage',
+    title: '2-Bedroom Cottage Build by Builders Sand & Stone',
+    isPromoNote: true,
+    originalBizId: 'biz-11',
+    originalBizName: 'Builders Sand & Stone',
+    originalBizInitials: 'BS',
+    originalBizColor: '#1a4b8c',
+    originalBizCategory: 'Building Materials',
+    thumbnail: 'assets/images/promo-notes/cottage-1.jpg',
+    images: [
+      'assets/images/promo-notes/cottage-1.jpg',
+      'assets/images/promo-notes/cottage-2.jpg'
+    ],
+    body: 'A complete material list for a 2-bedroom cottage build — foundation, walls, and roof structure. All quantities are estimates based on a standard 45m² floor plan with a mono-pitch roof.\n\nBuilders Sand & Stone supplies everything you need for the shell: cement, bricks, sand, stone, lintels, reinforcing mesh, DPC, and damp-proof membrane. This note covers the full foundation and walling scope including trench fill, floor slab, wall plate level brickwork, and lintels over doors and windows.\n\nLabour and finishing materials (plumbing, electrical, roof sheeting, ceiling boards, paint, tiles) are not included — contact Builders Sand & Stone for a full project quote.',
+    items: [
+      { title: 'Cement 50kg bags', price: 70, unit: 'per bag', business: 'Builders Sand & Stone', qty: 80 },
+      { title: '6-inch Hollow concrete blocks', price: 8, unit: 'per no.', business: 'Builders Sand & Stone', qty: 1086 },
+      { title: '4-inch Hollow concrete blocks', price: 7, unit: 'per no.', business: 'Builders Sand & Stone', qty: 270 },
+      { title: 'Stock bricks — columns & cobbling', price: 2, unit: 'per no.', business: 'Builders Sand & Stone', qty: 1440 },
+      { title: 'Brickforce 150mm roll 20m', price: 17, unit: 'per roll', business: 'Builders Sand & Stone', qty: 11 },
+      { title: 'Pit sand — 6m³ tipper load', price: 1300, unit: 'per load', business: 'Builders Sand & Stone', qty: 4 },
+      { title: 'River sand — 6m³ tipper load', price: 1300, unit: 'per load', business: 'Builders Sand & Stone', qty: 3 },
+      { title: 'Crushed stone 19mm — 6m³ tipper load', price: 1400, unit: 'per load', business: 'Builders Sand & Stone', qty: 2 },
+      { title: 'Welded mesh S193 2.4×6m sheet', price: 269, unit: 'per sheet', business: 'Builders Sand & Stone', qty: 5 },
+      { title: 'DPC 150mm roll 40m', price: 51, unit: 'per roll', business: 'Builders Sand & Stone', qty: 1 },
+      { title: 'Damp proof membrane 3×30m', price: 371, unit: 'per sheet', business: 'Builders Sand & Stone', qty: 1 },
+      { title: 'Concrete lintels — 1.5m pivot door', price: 60, unit: 'per no.', business: 'Builders Sand & Stone', qty: 1 },
+      { title: 'Concrete lintels — 900mm internal', price: 40, unit: 'per no.', business: 'Builders Sand & Stone', qty: 3 }
+    ]
+  },
+  {
+    id: 'promo-note-kitchen',
+    title: 'Kitchen Cupboard Set by Board Kings',
+    isPromoNote: true,
+    originalBizId: 'biz-1',
+    originalBizName: 'Board Kings',
+    originalBizInitials: 'BK',
+    originalBizColor: '#1a4b8c',
+    originalBizCategory: 'Kitchen & Wardrobe Design',
+    thumbnail: 'assets/images/promo-notes/kitchen-1.webp',
+    images: [
+      'assets/images/promo-notes/kitchen-1.webp',
+      'assets/images/promo-notes/kitchen-2.jpg',
+      'assets/images/promo-notes/kitchen-3.jpg'
+    ],
+    body: 'A modern black-and-wood finish kitchen cupboard set — 2155mm wide × 420mm deep × 1610mm tall. Built from 15mm black MDP carcass with 25mm wood-finish MDF accents and a 32mm wood-finish countertop.\n\nBoard Kings specialises in custom kitchen joinery and fitted furniture. This note covers all board materials, edging, and hardware needed to build a complete kitchen cabinet unit with drawers, soft-close doors, and a solid countertop. Suitable for a compact kitchen or as a pantry addition.\n\nLabour for assembly and installation is not included — contact Board Kings for a full kitchen design and installation quote.',
+    items: [
+      { title: '15mm black MDP board — carcass & doors (2750×1830mm)', price: 600, unit: 'per sheet', business: 'Board Kings', qty: 2 },
+      { title: '25mm wood-finish MDF — accents & supports (2750×1830mm)', price: 750, unit: 'per sheet', business: 'Board Kings', qty: 1 },
+      { title: '32mm wood-finish countertop (pre-cut 1200×420mm)', price: 450, unit: 'per unit', business: 'Board Kings', qty: 1 },
+      { title: 'PVC impact edge banding — black & wood finish match', price: 50, unit: 'per roll', business: 'Board Kings', qty: 2 },
+      { title: '15mm MDF back panel — pantry rear', price: 200, unit: 'per sheet', business: 'Board Kings', qty: 1 },
+      { title: 'Metal drawer slides — heavy duty (pairs)', price: 60, unit: 'per pair', business: 'Board Kings', qty: 3 },
+      { title: 'Modern metal cabinet handles — black', price: 40, unit: 'per unit', business: 'Board Kings', qty: 6 },
+      { title: 'Concealed soft-close hinges (pairs)', price: 30, unit: 'per pair', business: 'Board Kings', qty: 8 }
+    ]
+  },
+  {
+    id: 'promo-note-dining',
+    title: 'Pine Monastery Dining Table by Builders Depot (no chairs)',
+    isPromoNote: true,
+    originalBizId: 'biz-29',
+    originalBizName: 'Builders Depot',
+    originalBizInitials: 'BD',
+    originalBizColor: '#1a4b8c',
+    originalBizCategory: 'Boards & Timber',
+    thumbnail: 'assets/images/promo-notes/dining-1.jpg',
+    images: [
+      'assets/images/promo-notes/dining-1.jpg',
+      'assets/images/promo-notes/dining-2.jpg'
+    ],
+    body: 'A handcrafted rustic whitewash pine monastery dining table — seats 4 people. Built from 2×6×8 framing lumber with thick 5-inch turned monastery legs. This is a table only (no chairs included — choose your own seating from Foromane\'s directory!).\n\nThe design features a breadboard-end tabletop assembled with pocket-hole joinery, a sturdy base frame with aprons and centre support, and mitered corner trim. Finished with a whitewash pickling stain, rustic brown layer, and triple-thick satin polyurethane for durability.\n\nBuilders Depot supplies all the timber, hardware, and finishing materials listed here. They stock premium pine boards, turned legs, screws, adhesives, stains, and protective coatings — everything you need for this weekend woodworking project.',
+    items: [
+      { title: '2×6×8 framing lumber — tabletop planks', price: 90, unit: 'per board', business: 'Builders Depot', qty: 11 },
+      { title: 'Pine monastery legs 5-inch thick (turned)', price: 150, unit: 'per leg', business: 'Builders Depot', qty: 4 },
+      { title: '1¼-inch pocket hole screws', price: 65, unit: 'per box', business: 'Builders Depot', qty: 1 },
+      { title: '2½-inch pocket hole screws', price: 75, unit: 'per box', business: 'Builders Depot', qty: 1 },
+      { title: '2½-inch wood screws', price: 55, unit: 'per box', business: 'Builders Depot', qty: 1 },
+      { title: 'Wood glue', price: 45, unit: 'per bottle', business: 'Builders Depot', qty: 1 },
+      { title: 'Wood filler', price: 35, unit: 'per tub', business: 'Builders Depot', qty: 1 },
+      { title: 'Sandpaper combo kit — 80-grit & 220-grit', price: 44, unit: 'per kit', business: 'Builders Depot', qty: 1 },
+      { title: 'White wash pickling stain 1L', price: 145, unit: 'per tin', business: 'Builders Depot', qty: 1 },
+      { title: 'Rustic brown wood stain 1L', price: 155, unit: 'per tin', business: 'Builders Depot', qty: 1 },
+      { title: 'Polyurethane protective finish — satin 1L', price: 195, unit: 'per tin', business: 'Builders Depot', qty: 1 }
     ]
   }
 ];

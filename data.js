@@ -64,6 +64,12 @@ window.getBusinessLogo = function(bizId) {
       var b = window.SAMPLE_BUSINESSES[i];
       window._bizLogoCache[b.id] = b.logo ? window.assetUrl(b.logo) : null;
     }
+    if (window.ZIMBABWE_BUSINESSES) {
+      for (var j = 0; j < window.ZIMBABWE_BUSINESSES.length; j++) {
+        var zb = window.ZIMBABWE_BUSINESSES[j];
+        window._bizLogoCache[zb.id] = zb.logo ? window.assetUrl(zb.logo) : null;
+      }
+    }
   }
   return window._bizLogoCache[bizId] || null;
 };

@@ -366,8 +366,7 @@ window.dashActivatePro = function() {
   var s = UserState;
   if (s.id === 'guest') {
     showToast('Create a profile first');
-    var m = document.getElementById('register-modal');
-    if (m) { m.style.display = 'block'; m.classList.add('active'); }
+    goTo('view-register');initRegisterView();
     return;
   }
   s.role = 'Tradesperson (Contractor)';

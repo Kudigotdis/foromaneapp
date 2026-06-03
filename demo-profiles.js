@@ -20,6 +20,21 @@ window.DEMO_PROFILES = [
         "businessInfo":  null
     },
     {
+        "id":  "supplier",
+        "name":  "Pako (Board Kings)",
+        "role":  "Business &amp; Materials Supplier",
+        "initials":  "PK",
+        "color":  "#fd7600",
+        "town":  "Gaborone",
+        "firstName":  "Pako",
+        "surname":  "Guzani",
+        "email":  "pako@boardkings.co.bw",
+        "phone":  "+267 71234500",
+        "image":  "assets/images/profile_pictures_dummy/Download Profiles/Male/male_104.jpg",
+        "gender":  "Male",
+        "businessInfo":  null
+    },
+    {
         "id":  "user-kago",
         "name":  "Kago Motlhabane",
         "role":  "General User",

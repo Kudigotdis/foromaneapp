@@ -238,6 +238,7 @@ const UserState = {
   isTradesperson() { return this.role === "Tradesperson (Contractor)"; },
   isGeneralUser() { return this.role === "General User"; },
   hasBusiness() { return this.business !== null; },
+  hasRetailHours() { return this.business !== null && this.business.retailHours != null; },
   // ─── Role helpers ───
   isBrowser() { return this.id === 'guest'; },
   isSubscriber() { return this.role === 'General User' && this.id !== 'guest'; },

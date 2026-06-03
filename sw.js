@@ -56,7 +56,7 @@ const ASSETS = [
   'sw-register.js',
   'drive-api.js',
   'google-config.js',
-  'locations.json'
+  'botswana_locations.json'
 ];
 
 self.addEventListener('install', e => {

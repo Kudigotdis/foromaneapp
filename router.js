@@ -85,7 +85,18 @@ function manageUI(viewId) {
   const bottomNav = document.getElementById('bottom-nav');
   const filterBar = document.getElementById('filter-bar');
 
-  if (viewId === 'view-welcome' || viewId === 'view-admin' || viewId === 'view-analytics' || viewId === 'view-analytics-month' || viewId === 'view-business-staff') {
+  if (viewId === 'view-welcome' || viewId === 'view-register' || viewId === 'view-login' || viewId === 'view-admin' || viewId === 'view-analytics' || viewId === 'view-analytics-month' || viewId === 'view-business-staff') {
+    if (viewId === 'view-login' && window.Auth) {
+      window.Auth.hideForgotPassword();
+      window.Auth._clearLoginForm();
+    }
+    if (header) header.classList.add('shell-hidden');
+    if (bottomNav) bottomNav.style.display = 'none';
+    if (filterBar) filterBar.style.display = 'none';
+    return;
+  }
+
+  if (viewId === 'view-user-interests' && window._regModeInterests) {
     if (header) header.classList.add('shell-hidden');
     if (bottomNav) bottomNav.style.display = 'none';
     if (filterBar) filterBar.style.display = 'none';

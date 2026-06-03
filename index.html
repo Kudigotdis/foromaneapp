@@ -48,8 +48,8 @@
         </div>
         <div class="welcome-buttons">
           <button class="welcome-btn welcome-btn-primary" onclick="Auth.loginAsGuest()">Browse</button>
-          <button class="welcome-btn welcome-btn-outline" onclick="openModal('login-modal')">Login</button>
-          <button class="welcome-btn welcome-btn-outline" onclick="openModal('register-modal')">Create Profile</button>
+          <button class="welcome-btn welcome-btn-outline" onclick="goTo('view-login')">Login</button>
+          <button class="welcome-btn welcome-btn-outline" onclick="goTo('view-register');initRegisterView();">Create Profile</button>
           <button class="welcome-btn welcome-btn-ghost" onclick="openSwitcher()">Demo</button>
         </div>
       </div>
@@ -90,20 +90,30 @@
       <div id="biz-catalogue-listed-content"></div>
     </div>
 
+    <!-- ═══ BUSINESS BRANDS ═══ -->
+    <div id="view-business-brands" class="view no-pad">
+      <div id="biz-brands-content" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- ═══ BUSINESS BRANDS LISTED ITEMS ═══ -->
+    <div id="view-business-brands-listed" class="view no-pad">
+      <div id="biz-brands-listed-content" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
     <!-- ═══ NOTES TAB ═══ -->
     <div id="view-notes" class="view app-tab no-pad">
       <div class="notes-header" style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
         <h2 style="font-size:18px; font-weight:700;">My Notes</h2>
-        <span style="font-size:12px;font-weight:600;cursor:pointer;opacity:0.8;" onclick="openModal('buy-notes-modal')">Get More</span>
       </div>
       <div style="flex:1;overflow-y:auto;padding:12px 12px 0;">
         <div id="notes-list"></div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 12px 35px;flex-shrink:0;">
-        <button onclick="createNote()" style="background:white;border:1px solid var(--grey-light);border-radius:12px;padding:12px 24px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;">
-          <img src="assets/icons/solid/add-to-note_orange.webp" style="width:30px;height:30px;object-fit:contain;">
-        </button>
-        <div id="notes-remaining-counter" style="font-size:18px;color:var(--grey-dark);text-align:center;margin:0;"></div>
+      <div id="notes-create-wrapper" style="padding:12px 12px 35px;flex-shrink:0;">
+        <button id="notes-remaining-counter" class="create-note-btn" onclick="createNote()">+ Add Note</button>
+      </div>
+      <div class="notes-filter-bar">
+        <button class="notes-filter-btn active" data-filter="my-notes" onclick="setNotesFilter('my-notes')">My Notes</button>
+        <button class="notes-filter-btn" data-filter="promo-notes" onclick="setNotesFilter('promo-notes')">Promo Notes</button>
       </div>
     </div>
 
@@ -113,6 +123,10 @@
         <div class="note-total-label">Total Estimate</div>
         <div class="note-total-val" id="note-total-val">P 0.00</div>
       </div>
+
+      <!-- Promo attribution bar (hidden for personal notes) -->
+      <div id="promo-attribution-bar" class="promo-attribution" style="display:none;"></div>
+
       <div class="note-media-section" id="note-media-section">
         <div class="media-empty-state" id="media-empty-state" onclick="changeNoteThumbnail()">
           <div class="add-image-btn">
@@ -138,6 +152,7 @@
         <div class="note-title-display" id="note-title-display" contenteditable="true" oninput="editNoteTitle()">Note Title</div>
         <div contenteditable="true" id="note-body-input" class="note-body-input" oninput="saveNoteBody()" placeholder="Write your note here..."></div>
       </div>
+      <button id="promo-add-from-detail" class="add-to-notes-btn" style="display:none;margin:0 16px 8px;">+ Add to My Notes</button>
       <div class="note-items-container">
         <div id="note-items-list"></div>
       </div>
@@ -221,8 +236,8 @@
 
       <!-- Guest CTA (shown only for guest users) -->
       <div id="guest-cta" style="display:none;padding:16px;text-align:center;">
-        <button class="btn" onclick="openModal('register-modal')" style="margin-bottom:8px;">Create Profile</button>
-        <button class="btn-outline" onclick="openModal('login-modal')">Sign In</button>
+        <button class="btn" onclick="goTo('view-register');initRegisterView();" style="margin-bottom:8px;">Create Profile</button>
+        <button class="btn-outline" onclick="goTo('view-login')">Sign In</button>
         <p style="font-size:12px;color:var(--grey-dark);margin-top:12px;">Create a profile to save notes, like promos, and more!</p>
       </div>
 
@@ -321,10 +336,10 @@
 
       <!-- Switch Account -->
       <div style="padding:16px; text-align:center;">
-        <button class="btn" onclick="openSwitcher()" style="width:100%;border-radius:2px !important;">
+        <button class="btn" onclick="openSwitcher()" style="width:100%;">
           <i class="fas fa-users"></i> Switch Account
         </button>
-        <button class="btn" onclick="logoutUser()" style="width:100%;margin-top:8px;background:transparent;color:var(--orange);border:2px solid var(--orange);border-radius:2px !important;">
+        <button class="btn" onclick="logoutUser()" style="width:100%;margin-top:8px;background:transparent;color:var(--orange);border:2px solid var(--orange);">
           <i class="fas fa-sign-out-alt"></i> Logout
         </button>
       </div>
@@ -385,14 +400,14 @@
 
     <!-- ═══ USER INTERESTS PAGE ═══ -->
     <div id="view-user-interests" class="view">
-      <div style="padding:12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--grey-light);">
-        <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
-        <h2 style="font-size:18px; font-weight:700; margin:0;flex:1;">My Interests</h2>
-        <button class="modal-close" onclick="goBack()"><img src="assets/icons/solid/xmark_orange.webp" style="width:18px;height:18px;display:block;"></button>
+      <div id="interests-top-bar" style="padding:12px 16px;border-bottom:1px solid var(--grey-light);">
+        <h2 id="interests-title" style="font-size:18px;font-weight:700;margin:0;">Select Your Interests</h2>
+        <div id="interests-subtitle" style="font-size:13px;color:var(--grey-dark);margin-top:2px;">Choose at least 5 main categories</div>
       </div>
-      <div id="interests-page-body" style="flex:1; overflow-y:auto; padding:0;"></div>
-      <div style="padding:12px; border-top:1px solid var(--grey-light);">
-        <button class="btn" onclick="saveInterestsFromPage()">Save Interests</button>
+      <div id="interests-page-body" style="flex:1;overflow-y:auto;padding:0;"></div>
+      <div id="interests-bottom-bar">
+        <button id="interests-back-btn" class="interests-bar-btn" onclick="cancelRegInterests()">Back</button>
+        <button id="interests-save-btn" class="interests-bar-btn" onclick="saveInterestsFromPage()">Save</button>
       </div>
     </div>
 
@@ -411,6 +426,238 @@
       </button>
     </div>
 
+    <!-- ═══ REGISTER PAGE ═══ -->
+    <div id="view-register" class="view" style="padding:0;">
+      <div style="padding:12px 16px;display:flex;align-items:center;border-bottom:1px solid var(--grey-light);position:sticky;top:0;background:var(--white);z-index:1;">
+        <span style="font-family:var(--font-head);font-size:20px;font-weight:700;">Create Profile</span>
+      </div>
+      <div style="padding:16px;">
+
+        <!-- Identity -->
+        <div class="sub-accordion">
+          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Identity</div>
+          <div class="sub-accordion-body">
+            <div class="field-row" style="display:flex;flex-direction:column;align-items:center;">
+              <div class="profile-photo-upload" onclick="document.getElementById('reg-photo-input').click()">
+                <img id="reg-photo-preview" src="" style="width:100%;height:100%;border-radius:12px;object-fit:cover;display:none;">
+                <div class="profile-photo-placeholder" id="reg-photo-placeholder">
+                  <i class="fas fa-camera" style="font-size:24px;color:var(--grey-dark);"></i>
+                  <span style="font-size:12px;color:var(--grey-dark);margin-top:4px;">Add Photo</span>
+                </div>
+              </div>
+              <input type="file" id="reg-photo-input" accept="image/*" style="display:none" onchange="handleRegPhotoSelect(event)">
+            </div>
+            <div class="field-row">
+              <input type="text" class="field-input" id="id-firstname" placeholder="First Name" value="" oninput="updateIdentityField('firstName', this.value);updateRegTally()">
+            </div>
+            <div class="field-row">
+              <input type="text" class="field-input" id="id-surname" placeholder="Surname" value="" oninput="updateIdentityField('surname', this.value);updateRegTally()">
+            </div>
+            <div class="field-row">
+              <input type="text" class="field-input" id="id-username" placeholder="Username" value="" oninput="updateIdentityField('username', this.value);updateRegTally()">
+            </div>
+            <div class="field-row" style="flex-direction:column;">
+              <label style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:4px;"><i class="fa-solid fa-cake-candles" style="margin-right:4px;"></i> Date of Birth</label>
+              <div class="dob-selectors-grid" style="margin-bottom:8px;">
+                <select id="dob-day" class="field-input" style="text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;" onchange="syncDobToNative()">
+                  <option value="" disabled selected>Day</option>
+                </select>
+                <select id="dob-month" class="field-input" style="text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;" onchange="syncDobToNative()">
+                  <option value="" disabled selected>Month</option>
+                  <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+                  <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+                  <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+                  <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                </select>
+                <select id="dob-year" class="field-input" style="text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;" onchange="syncDobToNative()">
+                  <option value="" disabled selected>Year</option>
+                </select>
+              </div>
+              <div style="font-size:12px;color:var(--grey-dark);margin-bottom:4px;"><i class="fa-solid fa-circle-info" style="color:var(--orange);margin-right:4px;"></i> Minimum age: 12 years</div>
+              <input type="date" id="id-dob" value="" max="" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;" onfocus="this.max=new Date(new Date().setFullYear(new Date().getFullYear()-12)).toISOString().split('T')[0]" oninput="updateIdentityField('dateOfBirth', this.value);updateRegTally()">
+            </div>
+            <div class="field-row">
+              <div class="gender-toggle">
+                <button class="gender-btn" onclick="updateGender('Male')">Male</button>
+                <button class="gender-btn" onclick="updateGender('Female')">Female</button>
+              </div>
+            </div>
+            <div class="field-row">
+              <select class="field-input" id="id-nationality" style="text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:none;" onchange="updateIdentityField('nationality', this.value);updateRegTally()">
+                <option value="" disabled selected>Select Nationality</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <div style="font-size:13px;font-weight:600;color:var(--grey-dark);margin-bottom:6px;">Race *</div>
+              <div id="race-checkboxes" style="display:flex;flex-wrap:wrap;gap:8px;">
+                <label class="race-chip" onclick="toggleRace('White', this)">White</label>
+                <label class="race-chip" onclick="toggleRace('Black', this)">Black</label>
+                <label class="race-chip" onclick="toggleRace('Mixed Race', this)">Mixed Race</label>
+                <label class="race-chip" onclick="toggleRace('Asian', this)">Asian</label>
+                <label class="race-chip" onclick="toggleRace('Indian', this)">Indian</label>
+                <label class="race-chip" onclick="toggleRace('Other', this)">Other</label>
+              </div>
+              <input type="text" class="field-input" id="id-race-other" placeholder="Specify race" style="display:none;margin-top:6px;" oninput="updateRaceOther(this.value)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="sub-accordion">
+          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Contact</div>
+          <div class="sub-accordion-body">
+            <div class="sub-accordion">
+              <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Mobile Contact</div>
+              <div class="sub-accordion-body" id="reg-mobile-entries"></div>
+            </div>
+            <div class="sub-accordion">
+              <div class="sub-accordion-header" onclick="toggleSubAcc(this)">WhatsApp Contact</div>
+              <div class="sub-accordion-body" id="reg-whatsapp-entries"></div>
+            </div>
+            <div class="field-row" style="margin-top:4px;">
+              <input type="email" class="field-input" id="reg-email" placeholder="Email (optional)" value="">
+            </div>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div class="sub-accordion" style="overflow:visible;">
+          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Location</div>
+          <div class="sub-accordion-body">
+            <div class="field-row address-stack-row">
+              <select class="field-input" id="loc-country" onchange="onCountryChange(this.value)">
+                <option value="" disabled selected>Select Country</option>
+                <option value="botswana">Botswana</option>
+                <option value="zimbabwe">Zimbabwe</option>
+              </select>
+            </div>
+            <div class="field-row address-stack-row" style="position:relative;">
+              <input type="text" class="field-input" id="loc-town"
+                placeholder="Village / Town / City" autocomplete="off"
+                oninput="onTownInput(this.value)" onchange="onTownChange(this.value)"
+                onfocus="showDropdown('loc-town-dropdown')"
+                onblur="setTimeout(function(){hideDropdown('loc-town-dropdown')},180)">
+              <div class="custom-dropdown" id="loc-town-dropdown"></div>
+            </div>
+            <div id="add-town-container" style="display:none;">
+              <button type="button" class="add-entry-btn" onclick="submitNewTown()">
+                <i class="fas fa-plus-circle"></i> Add "<span id="add-town-name"></span>" to database
+              </button>
+            </div>
+            <div class="field-row address-stack-row" style="position:relative;">
+              <input type="text" class="field-input" id="loc-area"
+                placeholder="Area / Neighbourhood" autocomplete="off"
+                oninput="onAreaInput(this.value)" onchange="onAreaChange(this.value)"
+                onfocus="showDropdown('loc-area-dropdown')"
+                onblur="setTimeout(function(){hideDropdown('loc-area-dropdown')},180)">
+              <div class="custom-dropdown" id="loc-area-dropdown"></div>
+            </div>
+            <div id="add-area-container" style="display:none;">
+              <button type="button" class="add-entry-btn" onclick="submitNewArea()">
+                <i class="fas fa-plus-circle"></i> Add "<span id="add-area-name"></span>" to database
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Media -->
+        <div class="sub-accordion">
+          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Social Media</div>
+          <div class="sub-accordion-body">
+            <div class="field-row"><input type="text" class="field-input" id="social_facebook" placeholder="Facebook (username or URL)" value="" onchange="updateSocialField('facebook', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="social_twitter" placeholder="Twitter / X" value="" onchange="updateSocialField('twitter', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="social_instagram" placeholder="Instagram" value="" onchange="updateSocialField('instagram', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="social_tiktok" placeholder="TikTok" value="" onchange="updateSocialField('tiktok', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="social_snapchat" placeholder="Snapchat" value="" onchange="updateSocialField('snapchat', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="social_youtube" placeholder="YouTube" value="" onchange="updateSocialField('youtube', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="social_pinterest" placeholder="Pinterest" value="" onchange="updateSocialField('pinterest', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="social_linkedin" placeholder="LinkedIn" value="" onchange="updateSocialField('linkedin', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="social_telegram" placeholder="Telegram" value="" onchange="updateSocialField('telegram', this.value)"></div>
+          </div>
+        </div>
+
+        <!-- Account Security -->
+        <div class="sub-accordion">
+          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Account</div>
+          <div class="sub-accordion-body">
+            <div class="field-row" style="position:relative;">
+              <input type="password" class="field-input" id="reg-password" placeholder="Create a password (min 6 chars)" autocomplete="new-password">
+              <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('reg-password',this)" tabindex="-1" aria-label="Toggle password visibility"><i class="fas fa-eye"></i></button>
+            </div>
+            <div class="field-row" style="position:relative;">
+              <input type="password" class="field-input" id="reg-confirm" placeholder="Confirm password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();Auth.register();}">
+              <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('reg-confirm',this)" tabindex="-1" aria-label="Toggle password visibility"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="sub-accordion">
+          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Categories</div>
+          <div class="sub-accordion-body">
+            <div style="color:var(--orange);font-size:14px;font-weight:600;padding:8px 0 4px;">0 Selected</div>
+            <div class="category-pills"></div>
+            <button style="width:100%;margin-top:8px;padding:10px;background:var(--orange);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;" onclick="window._regModeInterests=true;goTo('view-user-interests');renderInterestsPage();">Tap to manage categories</button>
+          </div>
+        </div>
+
+        <div id="register-error" style="color:#c00;font-size:12px;margin:16px 0 8px;display:none;"></div>
+        <button class="btn" id="reg-submit-btn" onclick="Auth.register()" style="opacity:0.4;pointer-events:none;">Create Profile</button>
+        <p style="text-align:center;margin-top:16px;font-size:15px;color:var(--grey-dark);">
+          Already have an account? <a href="#" onclick="event.preventDefault();goTo('view-login');" style="color:var(--orange);font-weight:600;">Sign In</a>
+        </p>
+
+      </div>
+    </div>
+
+    <!-- ═══ LOGIN PAGE ═══ -->
+    <div id="view-login" class="view" style="padding:0;">
+      <div style="padding:12px 16px;display:flex;align-items:center;border-bottom:1px solid var(--grey-light);position:sticky;top:0;background:var(--white);z-index:1;">
+        <span style="font-family:var(--font-head);font-size:20px;font-weight:700;">Login</span>
+      </div>
+      <div style="padding:16px;">
+
+        <div id="login-form-fields">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" placeholder="Enter your username" autocomplete="username">
+          <label for="login-whatsapp">WhatsApp Number</label>
+          <input type="tel" id="login-whatsapp" placeholder="+267 71 234 567" autocomplete="tel">
+          <label for="login-password">Password</label>
+          <div style="position:relative;">
+            <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();Auth.loginWithCredential();}" style="width:100%;padding-right:36px;box-sizing:border-box;">
+            <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('login-password',this)" tabindex="-1" aria-label="Toggle password visibility"><i class="fas fa-eye"></i></button>
+          </div>
+          <div id="login-error" style="color:#c00;font-size:12px;margin-bottom:8px;display:none;"></div>
+          <button class="btn" onclick="Auth.loginWithCredential()">Sign In</button>
+          <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--grey-dark);">
+            <a href="#" onclick="event.preventDefault();goTo('view-register');initRegisterView();" style="color:var(--orange);">Create an account</a>
+          </p>
+          <p style="text-align:center;margin-top:8px;font-size:12px;color:var(--grey-mid);">
+            <a href="#" onclick="event.preventDefault();Auth.loginAsGuest();" style="color:var(--grey-dark);">Continue as Guest</a>
+          </p>
+          <p style="text-align:center;margin-top:6px;font-size:12px;">
+            <a href="#" onclick="event.preventDefault();Auth.showForgotPassword();" style="color:var(--grey-dark);">Forgot password?</a>
+          </p>
+        </div>
+
+        <div id="forgot-password-section" style="display:none;">
+          <p style="font-size:14px;font-weight:600;margin-bottom:4px;">Forgot Password</p>
+          <p style="font-size:12px;color:var(--grey-dark);margin-bottom:12px;">Enter your registered email and we'll retrieve your password.</p>
+          <label for="forgot-email">Email</label>
+          <input type="email" id="forgot-email" placeholder="email@example.com">
+          <div id="forgot-result" style="color:#c00;font-size:12px;margin-bottom:8px;display:none;"></div>
+          <button class="btn" onclick="Auth.retrievePassword()">Retrieve Password</button>
+          <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--grey-dark);">
+            <a href="#" onclick="event.preventDefault();Auth.hideForgotPassword();" style="color:var(--orange);">Back to Login</a>
+          </p>
+          <p style="text-align:center;margin-top:8px;font-size:11px;color:var(--grey-dark);">
+            Can't access your email? Contact us on WhatsApp <a href="https://wa.me/26771829765" target="_blank" style="color:var(--orange);font-weight:600;">+267 71829765</a>
+          </p>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ═══ PRO PROFILE ═══ -->
     <div id="view-pro-profile" class="view">
       <div id="pro-profile-content"></div>
@@ -425,6 +672,34 @@
           </div>
         </div>
         <div id="dd-call" class="biz-dropdown-container"><div class="biz-dropdown-inner"></div></div><div id="dd-facebook" class="biz-dropdown-container biz-dd-facebook"><div class="biz-dropdown-inner"></div></div><div id="dd-gps" class="biz-dropdown-container"><div class="biz-dropdown-inner"></div></div><div id="dd-whatsapp" class="biz-dropdown-container biz-dd-whatsapp"><div class="biz-dropdown-inner"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ SEARCH PAGE ═══ -->
+    <div id="view-search" class="view no-pad">
+      <div class="search-header">
+        <span class="search-header-title">Search Foromane</span>
+      </div>
+      <div class="search-pills">
+        <div class="pill active" onclick="setSearchMode('all')">All</div>
+        <div class="pill" onclick="setSearchMode('brand')">Brand</div>
+        <div class="pill" onclick="setSearchMode('business')">Business</div>
+        <div class="pill" onclick="setSearchMode('az')">A-Z</div>
+      </div>
+      <input type="text" id="search-input" class="search-input" placeholder="Search by name, brand, or store..." oninput="doSearch(this.value)">
+      <div id="search-results" class="search-body"></div>
+      <div class="search-price-filter">
+        <div class="price-filter-row">
+          <div class="price-filter-field">
+            <label for="price-min">Min Price</label>
+            <input type="number" id="price-min" placeholder="e.g. 0">
+          </div>
+          <div class="price-filter-field">
+            <label for="price-max">Max Price</label>
+            <input type="number" id="price-max" placeholder="e.g. 5000">
+          </div>
+        </div>
+        <button class="btn" onclick="confirmPriceFilter()">Confirm Filter</button>
       </div>
     </div>
 
@@ -480,200 +755,7 @@
     </div>
   </div>
 
-  <!-- ── LOGIN MODAL ── -->
-  <div class="modal-overlay" id="login-modal">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <span class="modal-title">Login</span>
-        <button class="modal-close" onclick="closeModal('login-modal')"><img src="assets/icons/solid/xmark_orange.webp" style="width:18px;height:18px;display:block;"></button>
-      </div>
-      <div class="modal-body">
-        <label for="login-credential">Email or Phone</label>
-        <input type="text" id="login-credential" placeholder="email@example.com or +267 71..." autocomplete="username">
-        <label for="login-password">Password</label>
-        <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();Auth.loginWithCredential();}">
-        <div id="login-error" style="color:#c00;font-size:12px;margin-bottom:8px;display:none;"></div>
-        <button class="btn" onclick="Auth.loginWithCredential()">Sign In</button>
-        <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--grey-dark);">
-          <a href="#" onclick="event.preventDefault();closeModal('login-modal');openModal('register-modal');" style="color:var(--orange);">Create an account</a>
-        </p>
-        <p style="text-align:center;margin-top:8px;font-size:12px;color:var(--grey-mid);">
-          <a href="#" onclick="event.preventDefault();closeModal('login-modal');Auth.loginAsGuest();" style="color:var(--grey-dark);">Continue as Guest</a>
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── REGISTER MODAL ── -->
-  <div class="modal-overlay" id="register-modal">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <span class="modal-title">Create Profile</span>
-        <button class="modal-close" onclick="closeModal('register-modal')"><img src="assets/icons/solid/xmark_orange.webp" style="width:18px;height:18px;display:block;"></button>
-      </div>
-      <div class="modal-body" style="padding-top:4px;">
-
-        <!-- Identity -->
-        <div class="sub-accordion">
-          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Identity</div>
-          <div class="sub-accordion-body">
-            <div class="field-row" style="display:flex;flex-direction:column;align-items:center;">
-              <div class="profile-photo-upload" onclick="document.getElementById('reg-photo-input').click()">
-                <img id="reg-photo-preview" src="" style="width:100%;height:100%;border-radius:12px;object-fit:cover;display:none;">
-                <div class="profile-photo-placeholder" id="reg-photo-placeholder">
-                  <i class="fas fa-camera" style="font-size:24px;color:var(--grey-dark);"></i>
-                  <span style="font-size:12px;color:var(--grey-dark);margin-top:4px;">Add Photo</span>
-                </div>
-              </div>
-              <input type="file" id="reg-photo-input" accept="image/*" style="display:none" onchange="handleRegPhotoSelect(event)">
-            </div>
-            <div class="field-row">
-              <input type="text" class="field-input" id="id-firstname" placeholder="First Name" value="" onchange="updateIdentityField('firstName', this.value);updateRegTally()">
-            </div>
-            <div class="field-row">
-              <input type="text" class="field-input" id="id-surname" placeholder="Surname" value="" onchange="updateIdentityField('surname', this.value);updateRegTally()">
-            </div>
-            <div class="field-row">
-              <input type="text" class="field-input" id="id-username" placeholder="Username / Handle" value="" onchange="updateIdentityField('username', this.value);updateRegTally()">
-            </div>
-            <div class="field-row">
-              <input type="date" class="field-input" id="id-dob" value="" onchange="updateIdentityField('dateOfBirth', this.value);updateRegTally()">
-            </div>
-            <div class="field-row">
-              <div class="gender-toggle">
-                <button class="gender-btn" onclick="updateGender('Male')">Male</button>
-                <button class="gender-btn active" onclick="updateGender('Female')">Female</button>
-              </div>
-            </div>
-            <div class="field-row">
-              <select class="field-input" id="id-nationality" onchange="updateIdentityField('nationality', this.value);updateRegTally()">
-                <option value="" disabled selected>Select Nationality</option>
-              </select>
-            </div>
-            <div class="field-row">
-              <input type="text" class="field-input" id="id-race" placeholder="Race" value="" onchange="updateIdentityField('race', this.value);updateRegTally()">
-            </div>
-          </div>
-        </div>
-
-        <!-- Contact -->
-        <div class="sub-accordion">
-          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Contact</div>
-          <div class="sub-accordion-body">
-            <div class="field-row">
-              <input type="tel" class="field-input" id="reg-phone" placeholder="Phone (e.g. +267 71 234 567)" value="">
-            </div>
-            <div class="field-row">
-              <input type="email" class="field-input" id="reg-email" placeholder="Email (optional)" value="">
-            </div>
-            <div class="sub-accordion">
-              <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Mobile Numbers</div>
-              <div class="sub-accordion-body" id="reg-mobile-entries"></div>
-            </div>
-            <div class="sub-accordion">
-              <div class="sub-accordion-header" onclick="toggleSubAcc(this)">WhatsApp Numbers</div>
-              <div class="sub-accordion-body" id="reg-whatsapp-entries"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Location -->
-        <div class="sub-accordion" style="overflow:visible;">
-          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Location</div>
-          <div class="sub-accordion-body">
-
-            <!-- 1. Country Selection (Top) -->
-            <div class="field-row address-stack-row">
-              <select class="field-input" id="loc-country" onchange="onCountryChange(this.value)">
-                <option value="" disabled selected>Select Country</option>
-                <option value="botswana">Botswana</option>
-                <option value="zimbabwe">Zimbabwe</option>
-              </select>
-            </div>
-
-            <!-- 2. Village / Town / City (Middle) -->
-            <div class="field-row address-stack-row" style="position:relative;">
-              <input type="text" class="field-input" id="loc-town"
-                placeholder="Village / Town / City" autocomplete="off"
-                oninput="onTownInput(this.value)" onchange="onTownChange(this.value)"
-                onfocus="showDropdown('loc-town-dropdown')"
-                onblur="setTimeout(function(){hideDropdown('loc-town-dropdown')},180)">
-              <div class="custom-dropdown" id="loc-town-dropdown"></div>
-            </div>
-            <!-- Add town to database -->
-            <div id="add-town-container" style="display:none;">
-              <button type="button" class="add-entry-btn" onclick="submitNewTown()">
-                <i class="fas fa-plus-circle"></i> Add "<span id="add-town-name"></span>" to database
-              </button>
-            </div>
-
-            <!-- 3. Area / Neighbourhood (Bottom) -->
-            <div class="field-row address-stack-row" style="position:relative;">
-              <input type="text" class="field-input" id="loc-area"
-                placeholder="Area / Neighbourhood" autocomplete="off"
-                oninput="onAreaInput(this.value)" onchange="onAreaChange(this.value)"
-                onfocus="showDropdown('loc-area-dropdown')"
-                onblur="setTimeout(function(){hideDropdown('loc-area-dropdown')},180)">
-              <div class="custom-dropdown" id="loc-area-dropdown"></div>
-            </div>
-            <!-- Add area to database -->
-            <div id="add-area-container" style="display:none;">
-              <button type="button" class="add-entry-btn" onclick="submitNewArea()">
-                <i class="fas fa-plus-circle"></i> Add "<span id="add-area-name"></span>" to database
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Social Media -->
-        <div class="sub-accordion">
-          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Social Media</div>
-          <div class="sub-accordion-body">
-            <div class="field-row"><input type="text" class="field-input" id="social_facebook" placeholder="Facebook (username or URL)" value="" onchange="updateSocialField('facebook', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_twitter" placeholder="Twitter / X" value="" onchange="updateSocialField('twitter', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_instagram" placeholder="Instagram" value="" onchange="updateSocialField('instagram', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_tiktok" placeholder="TikTok" value="" onchange="updateSocialField('tiktok', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_snapchat" placeholder="Snapchat" value="" onchange="updateSocialField('snapchat', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_youtube" placeholder="YouTube" value="" onchange="updateSocialField('youtube', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_pinterest" placeholder="Pinterest" value="" onchange="updateSocialField('pinterest', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_linkedin" placeholder="LinkedIn" value="" onchange="updateSocialField('linkedin', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_telegram" placeholder="Telegram" value="" onchange="updateSocialField('telegram', this.value)"></div>
-          </div>
-        </div>
-
-        <!-- Account Security -->
-        <div class="sub-accordion">
-          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Account</div>
-          <div class="sub-accordion-body">
-            <div class="field-row">
-              <input type="password" class="field-input" id="reg-password" placeholder="Create a password (min 6 chars)" autocomplete="new-password">
-            </div>
-            <div class="field-row">
-              <input type="password" class="field-input" id="reg-confirm" placeholder="Confirm password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();Auth.register();}">
-            </div>
-          </div>
-        </div>
-
-        <!-- Categories -->
-        <div class="sub-accordion">
-          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Categories</div>
-          <div class="sub-accordion-body">
-            <div style="color:var(--orange);font-size:14px;font-weight:600;padding:8px 0 4px;">0 Selected</div>
-            <div class="category-pills"></div>
-            <button style="width:100%;margin-top:8px;padding:10px;background:var(--orange);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;" onclick="goTo('view-user-interests');renderInterestsPage();">Tap to manage categories</button>
-          </div>
-        </div>
-
-        <div id="register-error" style="color:#c00;font-size:12px;margin:16px 0 8px;display:none;"></div>
-        <button class="btn" id="reg-submit-btn" onclick="Auth.register()" style="opacity:0.4;pointer-events:none;">Create Profile</button>
-        <p style="text-align:center;margin-top:16px;font-size:15px;color:var(--grey-dark);">
-          Already have an account? <a href="#" onclick="event.preventDefault();closeModal('register-modal');openModal('login-modal');" style="color:var(--orange);font-weight:600;">Sign In</a>
-        </p>
-
-      </div>
-    </div>
-  </div>
+  <!-- ── REGISTER MODAL (removed - converted to view-register) ── -->
 
   <!-- ── OTHER USERS MODAL ── -->
   <div class="modal-overlay" id="other-users-modal">
@@ -703,7 +785,10 @@
       <div class="modal-body">
         <p style="font-size:13px;color:var(--grey-dark);margin-bottom:12px;">Enter admin password to continue.</p>
         <label for="admin-password-input">Password</label>
-        <input type="password" id="admin-password-input" placeholder="Enter admin password" onkeydown="if(event.key==='Enter'){event.preventDefault();Auth.adminLogin();}">
+        <div style="position:relative;">
+          <input type="password" id="admin-password-input" placeholder="Enter admin password" onkeydown="if(event.key==='Enter'){event.preventDefault();Auth.adminLogin();}" style="width:100%;padding-right:36px;box-sizing:border-box;">
+          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('admin-password-input',this)" tabindex="-1" aria-label="Toggle password visibility"><i class="fas fa-eye"></i></button>
+        </div>
         <div id="admin-pw-error" style="color:#c00;font-size:12px;margin-bottom:8px;display:none;"></div>
         <button class="btn" onclick="Auth.adminLogin()">Enter Admin Panel</button>
         <p style="text-align:center;margin-top:8px;font-size:12px;color:var(--grey-mid);cursor:pointer;" onclick="closeModal('admin-pw-modal')">Cancel</p>
@@ -834,6 +919,14 @@
           </div>
         </div>
 
+        <!-- Operating Hours sub-accordion -->
+        <div class="sub-accordion" id="hours-sub-accordion">
+          <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Operating Hours <span id="hours-status" style="font-size:11px;color:var(--grey-mid);margin-left:6px;"></span></div>
+          <div class="sub-accordion-body" id="biz-hours-body">
+            <p style="font-size:12px;color:var(--grey-dark);padding:8px 0;">Loading...</p>
+          </div>
+        </div>
+
         <!-- Staff restriction notice -->
         <div id="biz-staff-notice" style="display:none;padding:8px;margin-top:8px;background:var(--orange-light);border-radius:4px;font-size:12px;color:var(--grey-dark);text-align:center;">
           <i class="fas fa-lock"></i> Staff — some fields are view only
@@ -905,6 +998,12 @@
             <div style="font-size:12px;font-weight:600;color:var(--orange);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px;display:block;">Area</div>
             <button id="item-area-btn" class="btn-outline" onclick="openItemAreaSelector()" style="width:100%;justify-content:center;font-size:13px;">Select areas</button>
             <p id="item-area-display" style="font-size:12px;color:var(--grey-dark);margin-top:4px;"></p>
+
+            <div style="font-size:12px;font-weight:600;color:var(--orange);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px;display:block;">Brand</div>
+            <div id="item-brand-wrapper" style="position:relative;margin-bottom:8px;">
+              <input type="text" id="item-brand-input" placeholder="Search or type brand name..." autocomplete="off" style="width:100%;padding:8px 10px;border:1.5px solid var(--grey-mid);border-radius:var(--radius);font-size:13px;box-sizing:border-box;" oninput="onBrandSearchInput(this.value)" onfocus="onBrandSearchFocus()" onblur="onBrandSearchBlur()">
+              <div id="item-brand-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:200px;overflow-y:auto;background:var(--white);border:1.5px solid var(--grey-mid);border-radius:6px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+            </div>
 
             <label for="item-tag-input">Tags</label>
             <div id="item-tag-container" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;"></div>
@@ -1180,29 +1279,6 @@
         <button class="modal-close" onclick="closeModal('location-modal')"><img src="assets/icons/solid/xmark_orange.webp" style="width:18px;height:18px;display:block;"></button>
       </div>
       <div class="modal-body" id="location-sheet-body" style="padding:0;"></div>
-    </div>
-  </div>
-
-  <!-- ── SEARCH MODAL ── -->
-  <div class="modal-overlay" id="search-modal">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <span class="modal-title">Search Promos</span>
-        <button class="modal-close" onclick="closeModal('search-modal')"><img src="assets/icons/solid/xmark_orange.webp" style="width:18px;height:18px;display:block;"></button>
-      </div>
-      <div class="modal-body">
-        <div style="display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px;">
-           <div class="pill active" onclick="setSearchMode('all')">All</div>
-           <div class="pill" onclick="setSearchMode('brand')">Brand</div>
-           <div class="pill" onclick="setSearchMode('business')">Business</div>
-           <div class="pill" onclick="setSearchMode('az')">A-Z</div>
-        </div>
-        <input type="text" id="search-input" placeholder="Search by name, brand, or store..." style="width:100%; padding:12px; border:1px solid var(--grey-light); border-radius:var(--radius); font-size:14px; box-sizing:border-box;" oninput="doSearch(this.value)">
-        <div id="search-results" style="margin-top:12px; max-height:300px; overflow-y:auto;"></div>
-        <div id="az-grid" style="display:none; margin-top:12px;">
-          <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding:16px 0;" id="az-grid-letters"></div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1527,11 +1603,13 @@
   <script defer src="asset-url.js"></script>
   <script defer src="data.js"></script>
   <script defer src="demo-data.js"></script>
-  <script defer src="locations-data.js"></script>
+  <script defer src="zimbabwe_businesses.js"></script>
+  <script defer src="botswana_locations.js"></script>
   <script defer src="zimbabwe_locations.js"></script>
   <script defer src="demo-profiles.js"></script>
   <script defer src="db.js"></script>
   <script defer src="media-cache.js"></script>
+  <script defer src="cadence-engine.js"></script>
   <script defer src="firebase-config.js"></script>
   <script defer src="path-utils.js"></script>
   <script defer src="mode-controller.js"></script>
@@ -1542,6 +1620,8 @@
   <script defer src="utils.js"></script>
   <script defer src="pricing-engine.js"></script>
   <script defer src="foromane_product_categories.js"></script>
+  <script defer src="data/Country_Codes.js"></script>
+  <script defer src="data/item_brands_foromane.js"></script>
   <script defer src="data/tradeSpecific.js"></script>
   <script defer src="data/tradesman-skills.js"></script>
   <script defer src="data/trade-skill-map.js"></script>

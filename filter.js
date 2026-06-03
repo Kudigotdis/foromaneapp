@@ -75,9 +75,12 @@ function findNearestTown(lat, lng) {
 
 window.setSearchMode = setSearchMode;
 window.doSearch = doSearch;
+window.confirmPriceFilter = confirmPriceFilter;
 window.openPromoTypeModal = openPromoTypeModal;
 window.openSearchModal = openSearchModal;
 window.selectPromoType = selectPromoType;
+window.renderBrandList = renderBrandList;
+window.selectBrand = selectBrand;
 window.toggleUserInterestsCollapsed = typeof toggleUserInterestsCollapsed !== 'undefined'
   ? toggleUserInterestsCollapsed : function(){};
 window.toggleCategoryCheckbox = typeof toggleCategoryCheckbox !== 'undefined'
@@ -103,46 +106,64 @@ window.openCountryPicker = openCountryPicker;
 window.selectCountry = selectCountry;
 
 let currentSearchMode = 'all';
+let _brandSearchActive = false;
+
 function setSearchMode(mode) {
+  if (mode === 'az') {
+    var input = document.getElementById('search-input');
+    var results = document.getElementById('search-results');
+    if (input) input.style.display = 'none';
+    if (results) {
+      var letters = [];
+      for (var i = 65; i <= 90; i++) letters.push(String.fromCharCode(i));
+      letters.push('#');
+      results.innerHTML = '<div class="az-grid">' +
+        letters.map(function(l) {
+          return '<button class="az-grid-btn" onclick="selectAlphaLetter(\'' + l + '\')">' + l + '</button>';
+        }).join('') +
+      '</div>';
+      results.style.display = '';
+    }
+    var pills = document.querySelectorAll('#view-search .pill');
+    pills.forEach(function(p) {
+      p.classList.toggle('active', p.textContent.trim() === 'A-Z');
+    });
+    return;
+  }
+  var prevMode = currentSearchMode;
   currentSearchMode = mode;
-  const pills = document.querySelectorAll('#search-modal .pill');
-  pills.forEach(p => {
-    p.classList.toggle('active', p.textContent.toLowerCase() === mode || (mode === 'az' && p.textContent.toLowerCase() === 'a-z'));
+  var pills = document.querySelectorAll('#view-search .pill');
+  pills.forEach(function(p) {
+    p.classList.toggle('active', p.textContent.toLowerCase() === mode);
   });
 
-  const input = document.getElementById('search-input');
-  const results = document.getElementById('search-results');
-  const grid = document.getElementById('az-grid');
+  var input = document.getElementById('search-input');
+  var results = document.getElementById('search-results');
+  if (!input || !results) return;
 
-  if (mode === 'az') {
-    input.style.display = 'none';
-    results.style.display = 'none';
-    grid.style.display = '';
-    if (!grid.querySelector('#az-grid-letters').children.length) {
-      buildAZGrid();
-    }
+  input.style.display = '';
+  results.style.display = '';
+
+  if (mode === 'brand') {
+    input.placeholder = 'Search brands...';
+    input.value = '';
+    _brandSearchActive = false;
+    renderBrandList('');
   } else {
-    input.style.display = '';
-    results.style.display = '';
-    grid.style.display = 'none';
+    input.placeholder = 'Search by name, brand, or store...';
+    if (prevMode === 'brand' || _brandSearchActive) {
+      input.value = '';
+      _brandSearchActive = false;
+    }
     doSearch(input.value);
   }
 }
 
-function buildAZGrid() {
-  const container = document.getElementById('az-grid-letters');
-  const letters = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  container.innerHTML = letters.map(l => {
-    const lnk = l === '#' ? 'hash' : l;
-    return '<div class="az-letter" data-letter="' + l + '" onclick="selectAlphaLetter(\'' + l + '\')">' + l + '</div>';
-  }).join('');
-}
-
 function selectAlphaLetter(letter) {
-  closeModal('search-modal');
+  goTo('view-directory');
   var tab = document.getElementById('nav-directory');
   if (tab) tab.click();
-  setTimeout(function() { scrollToAlpha(letter); }, 100);
+  setTimeout(function() { scrollToAlpha(letter); }, 200);
 }
 window.selectAlphaLetter = selectAlphaLetter;
 
@@ -150,63 +171,136 @@ function openSearchModal() {
   currentSearchMode = 'all';
   var input = document.getElementById('search-input');
   var results = document.getElementById('search-results');
-  var grid = document.getElementById('az-grid');
-  input.value = '';
-  results.innerHTML = '';
-  input.style.display = '';
-  results.style.display = '';
-  grid.style.display = 'none';
+  if (input) input.value = '';
+  if (results) results.innerHTML = '';
+  if (input) input.style.display = '';
+  if (results) results.style.display = '';
 
-  const pills = document.querySelectorAll('#search-modal .pill');
-  pills.forEach(p => p.classList.remove('active'));
-  const allPill = pills[0];
+  var pills = document.querySelectorAll('#view-search .pill');
+  pills.forEach(function(p) { p.classList.remove('active'); });
+  var allPill = pills[0];
   if (allPill) allPill.classList.add('active');
 
-  openModal('search-modal');
-  input.focus();
+  goTo('view-search');
+  if (input) setTimeout(function() { input.focus(); }, 200);
+}
+
+function renderBrandList(filterText) {
+  var results = document.getElementById('search-results');
+  if (!results) return;
+  var brands = (window.ITEM_BRANDS && window.ITEM_BRANDS.brands) || [];
+  var q = (filterText || '').toLowerCase().trim();
+  var filtered = q ? brands.filter(function(b) { return b.name.toLowerCase().indexOf(q) !== -1; }) : brands;
+  filtered.sort(function(a, b) { return a.name.localeCompare(b.name); });
+
+  if (filtered.length === 0) {
+    results.innerHTML = '<p style="color:var(--grey-dark);font-size:13px;text-align:center;padding:20px;">No brands found</p>';
+    return;
+  }
+
+  var promos = window._promos || [];
+  var promoCounts = {};
+  promos.forEach(function(p) { if (p.brand) { var k = p.brand.toLowerCase().trim(); promoCounts[k] = (promoCounts[k] || 0) + 1; } });
+
+  results.innerHTML = filtered.map(function(b) {
+    var k = b.name.toLowerCase();
+    var count = promoCounts[k] || 0;
+    var nameEsc = b.name.replace(/'/g, "\\'");
+    return '<div style="padding:12px 10px;border-bottom:1px solid var(--grey-light);cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="selectBrand(\'' + nameEsc + '\')">' +
+      '<span style="font-weight:600;font-size:18px;">' + b.name + '</span>' +
+      '<span style="color:var(--orange);font-size:12px;font-weight:600;">' + count + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function selectBrand(brandName) {
+  var input = document.getElementById('search-input');
+  if (input) {
+    input.value = brandName;
+    input.placeholder = 'Search by name, brand, or store...';
+  }
+  _brandSearchActive = true;
+  currentSearchMode = 'brand';
+  doSearch(brandName);
 }
 
 function doSearch(query) {
-  const results = document.getElementById('search-results');
-  if (!query || query.trim() === '') {
-    results.innerHTML = '<p style="color:var(--grey-dark); font-size:13px; text-align:center; padding:20px;">Type to search promos...</p>';
-    return;
-  }
-  const q = query.toLowerCase();
-  const matches = window._promos.filter(p => {
-    const brand = p.brand || '';
-    const title = p.title || '';
-    const bizName = p.businessName || '';
-    const cat = p.category || '';
-    const desc = p.desc || '';
+  var results = document.getElementById('search-results');
+  if (!results) return;
 
-    if (currentSearchMode === 'brand') return brand.toLowerCase().includes(q);
-    if (currentSearchMode === 'business') return bizName.toLowerCase().includes(q);
-    
-    return title.toLowerCase().includes(q) ||
-           brand.toLowerCase().includes(q) ||
-           bizName.toLowerCase().includes(q) ||
-           cat.toLowerCase().includes(q) ||
-           desc.toLowerCase().includes(q);
+  if (currentSearchMode === 'brand') {
+    if (!_brandSearchActive) {
+      renderBrandList(query);
+      return;
+    }
+    if (!query || !query.trim()) {
+      _brandSearchActive = false;
+      renderBrandList('');
+      return;
+    }
+  }
+
+  var minVal = parseFloat(document.getElementById('price-min') ? document.getElementById('price-min').value : '') || 0;
+  var maxVal = parseFloat(document.getElementById('price-max') ? document.getElementById('price-max').value : '') || Infinity;
+
+  if (!query || query.trim() === '') {
+    if (minVal > 0 || maxVal < Infinity) {
+      query = ''; // allow price-only filtering
+    } else {
+      results.innerHTML = '<p style="color:var(--grey-dark);font-size:13px;text-align:center;padding:20px;">Type to search promos...</p>';
+      return;
+    }
+  }
+  var q = query.toLowerCase();
+  var pool = window._promos || [];
+  var matches = pool.filter(function(p) {
+    var price = p.price || 0;
+    var inPriceRange = price >= minVal && price <= maxVal;
+    if (!inPriceRange) return false;
+
+    if (!q) return true; // price-only filter
+
+    var brand = p.brand || '';
+    var title = p.title || '';
+    var bizName = p.businessName || '';
+    var cat = p.category || '';
+    var desc = p.desc || '';
+
+    if (currentSearchMode === 'brand') return brand.toLowerCase().indexOf(q) !== -1;
+    if (currentSearchMode === 'business') return bizName.toLowerCase().indexOf(q) !== -1;
+
+    return title.toLowerCase().indexOf(q) !== -1 ||
+           brand.toLowerCase().indexOf(q) !== -1 ||
+           bizName.toLowerCase().indexOf(q) !== -1 ||
+           cat.toLowerCase().indexOf(q) !== -1 ||
+           desc.toLowerCase().indexOf(q) !== -1;
   });
 
   if (matches.length === 0) {
-    results.innerHTML = '<p style="color:var(--grey-dark); font-size:13px; text-align:center; padding:20px;">No results found</p>';
+    results.innerHTML = '<p style="color:var(--grey-dark);font-size:13px;text-align:center;padding:20px;">No results found</p>';
     return;
   }
 
-  results.innerHTML = matches.map(p => {
-    const brandHtml = p.brand ? '<span style="color:var(--orange); font-weight:700; cursor:pointer;" onclick="event.stopPropagation(); doSearch(\'' + p.brand.replace(/'/g, "\\'") + '\'); document.getElementById(\'search-input\').value=\'' + p.brand.replace(/'/g, "\\'") + '\'; setSearchMode(\'brand\');">\ud83c\udff7\ufe0f ' + p.brand + '</span>' : '';
-    
-    return '<div style="padding:10px; border-bottom:1px solid var(--grey-light); cursor:pointer;" onclick="closeModal(\'search-modal\'); document.getElementById(\'promo-' + p.id + '\').scrollIntoView({behavior:\'smooth\'}); document.getElementById(\'promo-' + p.id + '\').classList.add(\'open\');">' +
-      '<div style="font-size:14px; font-weight:600;">' + p.title + '</div>' +
-      '<div style="font-size:12px; color:var(--grey-dark);">' +
+  results.innerHTML = matches.map(function(p) {
+    var brandHtml = p.brand ? '<span style="color:var(--orange);font-weight:700;cursor:pointer;" onclick="event.stopPropagation();doSearch(\'' + p.brand.replace(/'/g, "\\'") + '\');document.getElementById(\'search-input\').value=\'' + p.brand.replace(/'/g, "\\'") + '\';setSearchMode(\'brand\');">\ud83c\udff7\ufe0f ' + p.brand + '</span>' : '';
+
+    return '<div style="padding:10px;border-bottom:1px solid var(--grey-light);cursor:pointer;" onclick="goTo(\'view-promos\');setTimeout(function(){var el=document.getElementById(\'promo-' + p.id + '\');if(el){el.scrollIntoView({behavior:\'smooth\'});el.classList.add(\'open\');}},200);">' +
+      '<div style="font-size:14px;font-weight:600;">' + p.title + '</div>' +
+      '<div style="font-size:12px;color:var(--grey-dark);">' +
         p.category + ' \u00b7 ' + p.businessName + ' \u00b7 P' + (p.price || 0).toFixed(2) +
         (brandHtml ? '<br>' + brandHtml : '') +
       '</div>' +
     '</div>';
   }).join('');
 }
+
+function confirmPriceFilter() {
+  var minVal = document.getElementById('price-min') ? document.getElementById('price-min').value || '0' : '0';
+  var maxVal = document.getElementById('price-max') ? document.getElementById('price-max').value || 'Any' : 'Any';
+  showToast('Price filter: P' + minVal + ' \u2013 P' + maxVal);
+  doSearch(document.getElementById('search-input') ? document.getElementById('search-input').value : '');
+}
+
 
 /* ─── CATEGORY FILTER SHEET ─── */
 function openCategorySheet() {

@@ -149,6 +149,7 @@ function _renderPromoCard(p, imgMode) {
       '</div>' +
       (isOwnPromo ? '<div style="font-size:10px;color:var(--orange);font-weight:600;margin-bottom:4px;">Your Promo</div>' : '') +
       '<div class="promo-title">' + p.title + '</div>' +
+      (p.brand ? '<div class="promo-brand"><i class="fas fa-tag" style="margin-right:4px;font-size:11px;"></i>' + p.brand + '</div>' : '') +
       '<div class="promo-desc">' + (p.desc || '') + '</div>' +
       '<div class="qty-row">' +
         '<div class="qty-price">P <span class="cp">' + ((p.basePrice || p.price || 0) * (p.qty || 1)).toFixed(2) + '</span> <span style="font-size:12px;font-weight:400;color:var(--orange);">' + (p.unit || 'each') + '</span></div>' +

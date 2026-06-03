@@ -3,13 +3,22 @@
    ════════════════════════════════════════════════════════ */
 
 let _pendingEdit = null;
+window._regModeInterests = false;
 
 function genId() {
   return '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
 function toggleSubAcc(header) {
-  header.parentElement.classList.toggle('open');
+  var parent = header.parentElement;
+  var container = parent.parentElement;
+  var siblings = container.children;
+  for (var i = 0; i < siblings.length; i++) {
+    if (siblings[i] !== parent && siblings[i].classList) {
+      siblings[i].classList.remove('open');
+    }
+  }
+  parent.classList.toggle('open');
 }
 
 // ─── NATIONALITIES DATA ───
@@ -429,7 +438,7 @@ function renderCategoriesSection() {
     <div class="sub-accordion-body">
       <div style="color:var(--orange);font-size:14px;font-weight:600;padding:8px 0 4px;">${count} Selected</div>
       <div class="category-pills">${pills || '<span style="font-size:13px;color:var(--grey-dark);font-style:italic;">No categories selected</span>'}</div>
-      <button style="width:100%;margin-top:8px;padding:10px;background:var(--orange);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;" onclick="goTo('view-user-interests');renderInterestsPage();">Tap to manage categories</button>
+      <button style="width:100%;margin-top:8px;padding:10px;background:var(--orange);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;" onclick="window._regModeInterests=false;goTo('view-user-interests');renderInterestsPage();">Tap to manage categories</button>
     </div>
   </div>`;
 }
@@ -443,9 +452,9 @@ function updateGender(val) {
   UserState.gender = val;
   UserState.updateIdentity('gender', val);
   localStorage.setItem('foromane_gender', val);
-  const registerModal = document.getElementById('register-modal');
-  if (registerModal) {
-    registerModal.querySelectorAll('.gender-btn').forEach(b => {
+  var registerView = document.getElementById('view-register');
+  if (registerView) {
+    registerView.querySelectorAll('.gender-btn').forEach(function(b) {
       b.classList.toggle('active', b.textContent.trim() === val);
     });
   }
@@ -459,6 +468,99 @@ function updateLocationField(key, value) {
 
 function updateSocialField(platform, value) {
   UserState.updateSocial(platform, value);
+}
+
+// ─── Race multi-select ───
+function initRaceChips() {
+  var saved = UserState.race || localStorage.getItem('foromane_race') || '';
+  var chips = document.querySelectorAll('#race-checkboxes .race-chip');
+  chips.forEach(function(el) { el.classList.remove('active'); });
+  var firstVal = saved ? saved.split(',')[0].trim() : '';
+  chips.forEach(function(el) {
+    if (el.textContent.trim() === firstVal) el.classList.add('active');
+  });
+  var otherInput = document.getElementById('id-race-other');
+  if (otherInput) {
+    if (firstVal === 'Other') {
+      otherInput.style.display = 'block';
+      var otherParts = saved.split(',').slice(1).join(',').trim();
+      if (otherParts) otherInput.value = otherParts;
+    } else {
+      otherInput.style.display = 'none';
+      otherInput.value = '';
+    }
+  }
+}
+
+function toggleRace(value, el) {
+  var chips = document.querySelectorAll('#race-checkboxes .race-chip');
+  var clicked = el || Array.from(chips).find(function(c) { return c.textContent.trim() === value; });
+  if (!clicked) return;
+  var wasActive = clicked.classList.contains('active');
+  chips.forEach(function(c) { c.classList.remove('active'); });
+  if (!wasActive) {
+    clicked.classList.add('active');
+  }
+  var otherInput = document.getElementById('id-race-other');
+  if (otherInput) {
+    otherInput.style.display = (!wasActive && value === 'Other') ? 'block' : 'none';
+    if (value !== 'Other' || wasActive) otherInput.value = '';
+  }
+  updateRaceFromChips();
+  updateRegTally();
+}
+
+function updateRaceOther(val) {
+  updateRaceFromChips();
+}
+
+function updateRaceFromChips() {
+  var chips = document.querySelectorAll('#race-checkboxes .race-chip');
+  var raceStr = '';
+  chips.forEach(function(el) {
+    if (el.classList.contains('active')) {
+      var v = el.textContent.trim();
+      if (v === 'Other') {
+        var otherVal = document.getElementById('id-race-other')?.value.trim();
+        raceStr = otherVal || 'Other';
+      } else {
+        raceStr = v;
+      }
+    }
+  });
+  updateIdentityField('race', raceStr);
+}
+
+// ─── Register modal: DOB dropdowns ───
+function populateDobDropdowns() {
+  var daySelect = document.getElementById('dob-day');
+  var yearSelect = document.getElementById('dob-year');
+  if (!daySelect || !yearSelect) return;
+  if (daySelect.options.length > 1) return;
+  for (var d = 1; d <= 31; d++) {
+    var opt = document.createElement('option');
+    opt.value = d.toString().padStart(2, '0');
+    opt.textContent = opt.value;
+    daySelect.appendChild(opt);
+  }
+  var cy = new Date().getFullYear();
+  for (var y = cy - 12; y >= cy - 100; y--) {
+    var opt2 = document.createElement('option');
+    opt2.value = y.toString();
+    opt2.textContent = y;
+    yearSelect.appendChild(opt2);
+  }
+}
+function syncDobToNative() {
+  var d = document.getElementById('dob-day').value;
+  var m = document.getElementById('dob-month').value;
+  var y = document.getElementById('dob-year').value;
+  var native = document.getElementById('id-dob');
+  if (!native) return;
+  if (d && m && y) {
+    native.value = y + '-' + m + '-' + d;
+    native.dispatchEvent(new Event('input', { bubbles: true }));
+  }
 }
 
 // ─── Register modal: photo upload ───
@@ -487,7 +589,7 @@ function updateRegTally() {
     'DOB': document.getElementById('id-dob')?.value,
     'Gender': UserState.gender,
     'Nationality': document.getElementById('id-nationality')?.value,
-    'Race': document.getElementById('id-race')?.value.trim(),
+    'Race': (function(){ var c=document.querySelectorAll('#race-checkboxes .race-chip.active'); return c.length>0; })(),
     'Mobile': UserState.contacts.mobiles.length > 0,
     'WhatsApp': UserState.contacts.whatsapps.length > 0,
   };
@@ -510,6 +612,22 @@ function updateRegTally() {
 }
 
 // ─── Register modal: mobile entries ───
+function buildCountryCodeOptions(selected) {
+  var opts = '<option value="">Country Code</option>';
+  var codes = window.COUNTRY_CODES || {};
+  var keys = Object.keys(codes).sort(function(a, b) {
+    var na = a.replace(/[^0-9]/g, '');
+    var nb = b.replace(/[^0-9]/g, '');
+    return parseInt(na, 10) - parseInt(nb, 10);
+  });
+  keys.forEach(function(code) {
+    var name = codes[code];
+    var names = Array.isArray(name) ? name.join(', ') : name;
+    opts += '<option value="' + code + '"' + (code === selected ? ' selected' : '') + '>' + code + ' (' + names + ')</option>';
+  });
+  return opts;
+}
+
 function renderRegMobileEntries() {
   const container = document.getElementById('reg-mobile-entries');
   if (!container) return;
@@ -517,14 +635,20 @@ function renderRegMobileEntries() {
   let html = '';
   mobiles.forEach(m => {
     html += `<div class="contact-entry">
-      <button class="star-btn ${m.isPrimary?'active':'inactive'}" onclick="setPrimaryMobile('${m.id}');renderRegMobileEntries();updateRegTally();">${m.isPrimary?'★':'☆'}</button>${m.isPrimary?' <span style="font-size:11px;color:var(--orange);font-weight:600;">Main Contact</span>':''}
-      <label>Title</label><input value="${(m.title||'').replace(/"/g,'&quot;')}" onchange="updateMobileField('${m.id}','title',this.value)" placeholder="e.g. Primary, Work, Home">
-      <label>Network</label><select onchange="updateMobileField('${m.id}','network',this.value);updateRegTally();"><option value="BTC" ${m.network==='BTC'?'selected':''}>BTC</option><option value="Mascom" ${m.network==='Mascom'?'selected':''}>Mascom</option><option value="Orange" ${m.network==='Orange'?'selected':''}>Orange</option></select>
-      <label>Number</label><input value="${(m.number||'').replace(/"/g,'&quot;')}" onchange="updateMobileField('${m.id}','number',this.value);updateRegTally();" placeholder="71234567">
-      <button class="remove-btn" onclick="removeMobileEntry('${m.id}');renderRegMobileEntries();updateRegTally();"><img src="assets/icons/solid/xmark_orange.webp" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"> Remove</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <button type="button" class="star-btn ${m.isPrimary?'active':'inactive'}" onclick="setPrimaryMobile('${m.id}');renderRegMobileEntries();updateRegTally();">
+          <i class="fa-solid fa-star"></i> ${m.isPrimary?'Primary Line':'Set as Primary'}
+        </button>
+      </div>
+      <div class="entry-field-stack">
+        <select style="text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;" onchange="updateMobileField('${m.id}','countryCode',this.value);updateRegTally();">
+          ${buildCountryCodeOptions(m.countryCode||'+267')}
+        </select>
+        <input type="tel" placeholder="Mobile Number" value="${(m.number||'').replace(/"/g,'&quot;')}" oninput="updateMobileField('${m.id}','number',this.value);updateRegTally();">
+      </div>
     </div>`;
   });
-  html += `<button class="add-entry-btn" onclick="addMobileEntry();renderRegMobileEntries();updateRegTally();"><i class="fas fa-plus"></i> Add Mobile Number</button>`;
+  html += `<button class="add-entry-btn" onclick="addMobileEntry();renderRegMobileEntries();updateRegTally();"><i class="fa-solid fa-plus"></i> Add Mobile Number</button>`;
   container.innerHTML = html;
 }
 
@@ -535,14 +659,20 @@ function renderRegWhatsAppEntries() {
   let html = '';
   was.forEach(w => {
     html += `<div class="contact-entry">
-      <button class="star-btn ${w.isPrimary?'active':'inactive'}" onclick="setPrimaryWhatsApp('${w.id}');renderRegWhatsAppEntries();updateRegTally();">${w.isPrimary?'★':'☆'}</button>${w.isPrimary?' <span style="font-size:11px;color:var(--orange);font-weight:600;">Main Contact</span>':''}
-      <label>Title</label><input value="${(w.title||'').replace(/"/g,'&quot;')}" onchange="updateWhatsAppField('${w.id}','title',this.value)" placeholder="e.g. Primary, Work">
-      <label>Country Code</label><input value="${(w.countryCode||'+267').replace(/"/g,'&quot;')}" onchange="updateWhatsAppField('${w.id}','countryCode',this.value)" placeholder="+267">
-      <label>Number</label><input value="${(w.number||'').replace(/"/g,'&quot;')}" onchange="updateWhatsAppField('${w.id}','number',this.value);updateRegTally();" placeholder="71234567">
-      <button class="remove-btn" onclick="removeWhatsAppEntry('${w.id}');renderRegWhatsAppEntries();updateRegTally();"><img src="assets/icons/solid/xmark_orange.webp" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"> Remove</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <button type="button" class="star-btn ${w.isPrimary?'active':'inactive'}" onclick="setPrimaryWhatsApp('${w.id}');renderRegWhatsAppEntries();updateRegTally();">
+          <i class="fa-solid fa-star"></i> ${w.isPrimary?'Primary WhatsApp':'Set Primary'}
+        </button>
+      </div>
+      <div class="entry-field-stack">
+        <select style="text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;" onchange="updateWhatsAppField('${w.id}','countryCode',this.value);updateRegTally();">
+          ${buildCountryCodeOptions(w.countryCode||'+267')}
+        </select>
+        <input type="tel" placeholder="WhatsApp Number" value="${(w.number||'').replace(/"/g,'&quot;')}" oninput="updateWhatsAppField('${w.id}','number',this.value);updateRegTally();">
+      </div>
     </div>`;
   });
-  html += `<button class="add-entry-btn" onclick="addWhatsAppEntry();renderRegWhatsAppEntries();updateRegTally();"><i class="fas fa-plus"></i> Add WhatsApp Number</button>`;
+  html += `<button class="add-entry-btn" onclick="addWhatsAppEntry();renderRegWhatsAppEntries();updateRegTally();"><i class="fa-solid fa-plus"></i> Add WhatsApp Number</button>`;
   container.innerHTML = html;
 }
 
@@ -896,7 +1026,7 @@ function openGpsMap() {
 
 // ─── CONTACT MANAGEMENT ───
 function addMobileEntry() {
-  const m = { id: genId(), title: '', network: 'BTC', number: '', isPrimary: false };
+  const m = { id: genId(), title: '', network: 'BTC', countryCode: '+267', number: '', isPrimary: false };
   UserState.addMobile(m);
   renderPersonalDetails();
   // Re-open the mobile sub-accordion
@@ -1488,14 +1618,62 @@ function removeFavourite(id) {
 function renderInterestsPage() {
   const body = document.getElementById('interests-page-body');
   if (!body) return;
-
   const data = window.FOROMANE_PRODUCT_CATEGORIES;
   if (!data || !data.categories) {
     body.innerHTML = '<p style="padding:20px;text-align:center;color:var(--grey-dark);">Categories not loaded</p>';
     return;
   }
 
-  const allSelected = UserState.interests.length === 0;
+  // Update top bar and bottom bar based on mode
+  var titleEl = document.getElementById('interests-title');
+  var subtitleEl = document.getElementById('interests-subtitle');
+  var backBtn = document.getElementById('interests-back-btn');
+  var saveBtn = document.getElementById('interests-save-btn');
+  var closeBtn = document.getElementById('interests-close-btn');
+
+  if (window._regModeInterests) {
+    if (titleEl) titleEl.textContent = 'Select Your Interests';
+    if (subtitleEl) { subtitleEl.style.display = 'block'; subtitleEl.textContent = 'Choose at least 5 main categories'; }
+    if (backBtn) { backBtn.style.display = 'inline-flex'; backBtn.onclick = cancelRegInterests; }
+    if (saveBtn) { saveBtn.style.display = 'inline-flex'; saveBtn.onclick = saveInterestsFromPage; }
+    if (closeBtn) { closeBtn.style.display = 'inline-flex'; closeBtn.onclick = closeRegInterests; }
+    renderRegModeInterests(body, data);
+  } else {
+    if (titleEl) titleEl.textContent = 'My Interests';
+    if (subtitleEl) subtitleEl.style.display = 'none';
+    if (backBtn) { backBtn.style.display = 'inline-flex'; backBtn.onclick = function() { goBack(); }; }
+    if (saveBtn) { saveBtn.style.display = 'inline-flex'; saveBtn.onclick = saveInterestsFromPage; }
+    if (closeBtn) closeBtn.style.display = 'none';
+    renderEditModeInterests(body, data);
+  }
+}
+
+function renderRegModeInterests(body, data) {
+  const allCatNames = data.categories.map(c => c.name);
+  const allSelected = allCatNames.every(n => UserState.interests.includes(n));
+  let html = `<div style="padding:8px 16px;border-bottom:1px solid var(--grey-light);cursor:pointer;font-size:15px;font-weight:600;background:${allSelected ? 'var(--orange-light)' : 'transparent'};" onclick="toggleAllInterests()">
+    <input type="checkbox" ${allSelected ? 'checked' : ''} style="margin-right:10px;accent-color:var(--orange);">All Interests
+  </div>`;
+  data.categories.forEach(function(cat) {
+    const isChecked = allSelected || UserState.interests.includes(cat.name);
+    const safeName = cat.name.replace(/'/g, "\\'");
+    html += `<div style="padding:10px 16px;border-bottom:1px solid var(--grey-light);cursor:pointer;font-size:14px;display:flex;align-items:center;" onclick="event.stopPropagation();toggleInterestCheckbox('${safeName}', this.querySelector('input').checked)">
+      <input type="checkbox" ${isChecked ? 'checked' : ''} style="margin-right:8px;accent-color:var(--orange);" onclick="event.stopPropagation();toggleInterestCheckbox('${safeName}', this.checked)">${cat.name}
+    </div>`;
+  });
+  body.innerHTML = html;
+}
+
+function renderEditModeInterests(body, data) {
+  const allCats = [];
+  data.categories.forEach(function(cat) {
+    if (cat.children) {
+      cat.children.forEach(function(sub) { allCats.push(sub.name); });
+    } else {
+      allCats.push(cat.name);
+    }
+  });
+  const allSelected = allCats.every(n => UserState.interests.includes(n));
   let html = `<div style="padding:12px 16px;border-bottom:1px solid var(--grey-light);cursor:pointer;font-size:15px;font-weight:600;background:${allSelected ? 'var(--orange-light)' : 'transparent'};" onclick="toggleAllInterests()">
     <input type="checkbox" ${allSelected ? 'checked' : ''} style="margin-right:10px;accent-color:var(--orange);">All Interests
   </div>`;
@@ -1539,17 +1717,24 @@ function toggleInterestCheckbox(name, checked) {
 function toggleAllInterests() {
   const allCats = [];
   const data = window.FOROMANE_PRODUCT_CATEGORIES || { categories: [] };
-  data.categories.forEach(cat => {
-    if (cat.children) {
-      cat.children.forEach(sub => { allCats.push(sub.name); });
-    } else {
-      allCats.push(cat.name);
-    }
-  });
-  if (UserState.interests.length === 0) {
-    UserState.interests = allCats;
+  if (window._regModeInterests) {
+    data.categories.forEach(function(cat) { allCats.push(cat.name); });
   } else {
-    UserState.interests = [];
+    data.categories.forEach(function(cat) {
+      if (cat.children) {
+        cat.children.forEach(function(sub) { allCats.push(sub.name); });
+      } else {
+        allCats.push(cat.name);
+      }
+    });
+  }
+  const allSelected = allCats.every(n => UserState.interests.includes(n));
+  if (allSelected) {
+    UserState.interests = UserState.interests.filter(n => !allCats.includes(n));
+  } else {
+    allCats.forEach(function(n) {
+      if (!UserState.interests.includes(n)) UserState.interests.push(n);
+    });
   }
   renderInterestsPage();
 }
@@ -1560,9 +1745,30 @@ function toggleCategoryChildren(id) {
 }
 
 function saveInterestsFromPage() {
+  if (window._regModeInterests) {
+    var count = UserState.interests.length;
+    if (count < 5) {
+      showToast('Please select at least 5 main categories.');
+      return;
+    }
+    UserState._persistInterests();
+    showToast('Interests saved!');
+    window._regModeInterests = false;
+    goBack();
+    return;
+  }
   UserState._persistInterests();
   showToast('Interests saved!');
   goTo('view-account');
+}
+
+function cancelRegInterests() {
+  window._regModeInterests = false;
+  goBack();
+}
+
+function closeRegInterests() {
+  cancelRegInterests();
 }
 
 // ─── ACCOUNT UI ───
@@ -1579,10 +1785,10 @@ function updateAccountHero() {
 
     var customAvatar = s.customAvatar || localStorage.getItem('foromane_custom_avatar_' + s.id);
   if (customAvatar) {
-    avatar.innerHTML = '<img src="' + customAvatar + '" style="width:120px;height:120px;border-radius:8px;object-fit:cover;display:block;border:3px solid rgba(200,200,200,0.2);" loading="lazy" width="120" height="120">';
+    avatar.innerHTML = '<img src="' + customAvatar + '" style="width:120px;height:120px;border-radius:10px;object-fit:cover;display:block;border:3px solid rgba(200,200,200,0.2);" loading="lazy" width="120" height="120">';
     avatar.onclick = function() { document.getElementById('acct-avatar-input').click(); };
   } else if (isGuest) {
-    avatar.innerHTML = '<img src="' + window.assetUrl('assets/images/company_logos_dummy/foromane_logo_thumbnail.webp') + '" style="width:120px;height:120px;border-radius:8px;object-fit:cover;display:block;border:3px solid rgba(200,200,200,0.2);" loading="lazy" width="120" height="120">';
+    avatar.innerHTML = '<img src="' + window.assetUrl('assets/images/company_logos_dummy/foromane_logo_thumbnail.webp') + '" style="width:120px;height:120px;border-radius:10px;object-fit:cover;display:block;border:3px solid rgba(200,200,200,0.2);" loading="lazy" width="120" height="120">';
     avatar.onclick = null;
   } else if (isAdmin) {
     avatar.innerHTML = initials;
@@ -1591,7 +1797,7 @@ function updateAccountHero() {
     const demoAcc = window.DEMO_PROFILES ? window.DEMO_PROFILES.find(a => a.id === s.id) : null;
     const fallbackImage = `assets/images/profile_pictures_dummy/${encodeURIComponent(name)}.jpg`;
     const imgSrc = window.assetUrl((demoAcc && demoAcc.image) || (demoAcc && demoAcc.logo) || fallbackImage);
-    avatar.innerHTML = '<img src="' + imgSrc + '" style="width:120px;height:120px;border-radius:8px;object-fit:cover;display:block;border:3px solid rgba(200,200,200,0.2);" onerror="this.outerHTML=\'' + initials + '\'" loading="lazy" width="120" height="120">';
+    avatar.innerHTML = '<img src="' + imgSrc + '" style="width:120px;height:120px;border-radius:10px;object-fit:cover;display:block;border:3px solid rgba(200,200,200,0.2);" onerror="this.outerHTML=\'' + initials + '\'" loading="lazy" width="120" height="120">';
     avatar.onclick = function() { document.getElementById('acct-avatar-input').click(); };
   }
 
@@ -1622,7 +1828,7 @@ function handleAvatarChange(event) {
   reader.onload = function(e) {
     var dataUrl = e.target.result;
     var avatar = document.getElementById('acct-avatar');
-    avatar.innerHTML = '<img src="' + dataUrl + '" style="width:120px;height:120px;border-radius:8px;object-fit:cover;display:block;border:3px solid rgba(200,200,200,0.2);" loading="lazy" width="120" height="120">';
+    avatar.innerHTML = '<img src="' + dataUrl + '" style="width:120px;height:120px;border-radius:10px;object-fit:cover;display:block;border:3px solid rgba(200,200,200,0.2);" loading="lazy" width="120" height="120">';
     localStorage.setItem('foromane_custom_avatar_' + UserState.id, dataUrl);
     if (UserState.customAvatar !== undefined) UserState.customAvatar = dataUrl;
   };
@@ -1631,7 +1837,8 @@ function handleAvatarChange(event) {
 
 // ─── SWITCHER HELPERS ───
 function getSwitcherImg(id, name) {
-  if (id === 'guest' || id === 'admin') return '';
+  if (id === 'guest') return '<img src="assets/images/company_logos_dummy/foromane_logo_thumbnail.webp" class="switcher-profile-img" loading="lazy" width="48" height="48">';
+  if (id === 'admin') return '';
   var p = window.DEMO_PROFILES ? window.DEMO_PROFILES.find(function(a) { return a.id === id || a.name === name; }) : null;
   var src = window.assetUrl((p && p.image) || 'assets/images/profile_pictures_dummy/' + id + '-avatar.jpg');
   return '<img src="' + src + '" class="switcher-profile-img" onerror="this.outerHTML=\'\'" loading="lazy" width="48" height="48">';
@@ -1934,8 +2141,8 @@ function renderNotesAccordion() {
   if (UserState.isBrowser()) {
     body.innerHTML = '<div style="padding-top:8px;text-align:center;">' +
       '<p style="font-size:13px;color:var(--grey-dark);margin-bottom:12px;">Save and organise items from promos and catalogue. Create a profile to use Notes.</p>' +
-      '<button class="btn btn-sm" onclick="openModal(\'register-modal\')" style="margin-bottom:8px;">Create Profile</button>' +
-      '<button class="btn-outline btn-sm" onclick="openModal(\'login-modal\')">Sign In</button>' +
+      '<button class="btn btn-sm" onclick="goTo(\'view-register\');initRegisterView();" style="margin-bottom:8px;">Create Profile</button>' +
+      '<button class="btn-outline btn-sm" onclick="goTo(\'view-login\')">Sign In</button>' +
     '</div>';
   } else {
     body.innerHTML = '<div style="padding-top:8px;display:flex;flex-direction:column;gap:8px;">' +
@@ -1951,8 +2158,8 @@ function renderFavSuppliersAccordion() {
   if (UserState.isBrowser()) {
     body.innerHTML = '<div style="padding-top:8px;text-align:center;">' +
       '<p style="font-size:13px;color:var(--grey-dark);margin-bottom:12px;">Like products, tradesmen, and suppliers for quick access. Create a profile to unlock this feature.</p>' +
-      '<button class="btn btn-sm" onclick="openModal(\'register-modal\')" style="margin-bottom:8px;">Create Profile</button>' +
-      '<button class="btn-outline btn-sm" onclick="openModal(\'login-modal\')">Sign In</button>' +
+      '<button class="btn btn-sm" onclick="goTo(\'view-register\');initRegisterView();" style="margin-bottom:8px;">Create Profile</button>' +
+      '<button class="btn-outline btn-sm" onclick="goTo(\'view-login\')">Sign In</button>' +
     '</div>';
   } else {
     var favIds = UserState.favouriteSuppliers;
@@ -2018,7 +2225,7 @@ function renderBusinessAccordion() {
   if (s.isBrowser()) {
     body.innerHTML = '<div style="padding-top:8px;text-align:center;">' +
       '<p style="font-size:13px;color:var(--grey-dark);margin-bottom:12px;">List your business on Foromane to reach customers across Botswana. Create a profile to get started.</p>' +
-      '<button class="btn" style="background:var(--orange);color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;width:100%;margin-bottom:8px;" onclick="openModal(\'register-modal\')">Create Profile</button>' +
+      '<button class="btn" style="background:var(--orange);color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;width:100%;margin-bottom:8px;" onclick="goTo(\'view-register\');initRegisterView();">Create Profile</button>' +
       '<button class="btn-outline btn-sm" onclick="renderDirectory()" style="display:block;text-align:center;">Browse Directory</button>' +
     '</div>';
     return;
@@ -2427,7 +2634,7 @@ function activateProAccount() {
   var s = UserState;
   if (s.id === 'guest') {
     showToast('Create a profile first');
-    openModal('register-modal');
+    goTo('view-register');initRegisterView();
     return;
   }
   s.role = 'Tradesperson (Contractor)';
@@ -2606,6 +2813,7 @@ function openCreateBiz() {
   if (catCount) catCount.textContent = cats.length + ' selected.';
 
   renderBizContactSection();
+  renderBizHoursSection();
 
   var staffNotice = document.getElementById('biz-staff-notice');
   if (staffNotice) {
@@ -2639,12 +2847,15 @@ async function saveBusiness() {
   var bizId = UserState.business ? UserState.business.id : 'biz_user';
   var sub = UserState.business ? UserState.business.subscription : 'free';
 
+  var retailHours = readBizHoursForm();
+
   UserState.business = {
     id: bizId, name: name, category: category,
     town: town, phone: phone, subscription: sub,
     logo: logoDataUrl, description: description,
     logoLandscape: landscapeDataUrl,
-    categories: categories, contacts: contacts
+    categories: categories, contacts: contacts,
+    retailHours: retailHours
   };
   UserState.businessRole = UserState.businessRole || 'owner';
   UserState.role = 'Business & Materials Supplier';
@@ -3213,7 +3424,7 @@ window.toggleInterestCheckbox = toggleInterestCheckbox;
 window.toggleAllInterests = toggleAllInterests;
 window.toggleCategoryChildren = toggleCategoryChildren;
 
-/* ─── Exports for register-modal ─── */
+/* ─── Exports for view-register ─── */
 window.NATIONALITIES_DATA = NATIONALITIES_DATA;
 window.populateTownDropdown = populateTownDropdown;
 window.populateAreaDropdown = populateAreaDropdown;
@@ -3291,6 +3502,346 @@ function updateDriveSyncUI() {
   var row = injectDriveRow();
   updateDriveRowUI(row);
 }
+
+/* ─── RETAIL HOURS FORM ─── */
+var HOURS_DAY_KEYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+var HOURS_DAY_LABELS = { monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu', friday:'Fri', saturday:'Sat', sunday:'Sun' };
+
+function renderBizHoursSection() {
+  var body = document.getElementById('biz-hours-body');
+  if (!body) return;
+  var biz = UserState.business;
+  var rh = biz ? (biz.retailHours || null) : null;
+  var branches = (rh && rh.branches && rh.branches.length > 0) ? JSON.parse(JSON.stringify(rh.branches)) : [{ name: 'Main Branch', hours: [], exceptions: [] }];
+  if (branches[0].hours.length === 0) {
+    branches[0].hours = HOURS_DAY_KEYS.map(function(d) { return { day: d, open: '', breakStart: '', breakEnd: '', close: '', closed: false }; });
+  }
+  var html = '<div id="hours-branches-container">';
+  branches.forEach(function(b, bi) {
+    html += '<div class="hours-branch-panel" data-branch-index="' + bi + '">';
+    html += '<div class="hours-branch-header">';
+    html += '<input class="hours-branch-name" value="' + (b.name || '').replace(/"/g,'&quot;') + '" placeholder="Branch name" onchange="updateHoursBranchName(' + bi + ',this.value)">';
+    if (branches.length > 1) {
+      html += '<button class="hours-remove-btn" onclick="removeHoursBranch(' + bi + ')">Remove</button>';
+    }
+    html += '</div>';
+    html += '<div class="hours-days-section">';
+    b.hours.forEach(function(h, di) {
+      var closed = h.closed ? ' checked' : '';
+      var disabled = closed ? ' disabled' : '';
+      html += '<div class="hours-day-row">';
+      html += '<span class="hours-day-label">' + (HOURS_DAY_LABELS[h.day] || h.day) + '</span>';
+      html += '<input type="time" class="hours-time-input hours-open" value="' + (h.open || '') + '"' + disabled + ' onchange="updateHoursField(' + bi + ',' + di + ',\'open\',this.value)">';
+      html += '<span class="hours-break-sep">break</span>';
+      html += '<input type="time" class="hours-time-input hours-break-start" value="' + (h.breakStart || '') + '"' + disabled + ' onchange="updateHoursField(' + bi + ',' + di + ',\'breakStart\',this.value)">';
+      html += '<span class="hours-break-sep">to</span>';
+      html += '<input type="time" class="hours-time-input hours-break-end" value="' + (h.breakEnd || '') + '"' + disabled + ' onchange="updateHoursField(' + bi + ',' + di + ',\'breakEnd\',this.value)">';
+      html += '<input type="time" class="hours-time-input hours-close" value="' + (h.close || '') + '"' + disabled + ' onchange="updateHoursField(' + bi + ',' + di + ',\'close\',this.value)">';
+      html += '<label class="hours-closed-toggle"><input type="checkbox"' + closed + ' onchange="updateHoursClosed(' + bi + ',' + di + ',this.checked)"> Closed</label>';
+      html += '</div>';
+    });
+    html += '</div>';
+    if (b.exceptions && b.exceptions.length > 0) {
+      html += '<div class="hours-exceptions-section">';
+      html += '<div class="hours-exceptions-title">Exceptions</div>';
+      b.exceptions.forEach(function(ex, ei) {
+        html += '<div class="hours-exception-row" data-ex-index="' + ei + '">';
+        html += '<input type="date" class="hours-date-input" value="' + (ex.date || '') + '" onchange="updateHoursException(' + bi + ',' + ei + ',\'date\',this.value)">';
+        html += '<input class="hours-label-input" placeholder="Label" value="' + (ex.label || '').replace(/"/g,'&quot;') + '" onchange="updateHoursException(' + bi + ',' + ei + ',\'label\',this.value)">';
+        html += '<label class="hours-closed-toggle"><input type="checkbox"' + (ex.closed ? ' checked' : '') + ' onchange="updateHoursExceptionClosed(' + bi + ',' + ei + ',this.checked)"> Closed</label>';
+        html += '<button class="hours-remove-btn" style="font-size:11px;" onclick="removeHoursException(' + bi + ',' + ei + ')">X</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    html += '<button class="hours-add-btn" style="margin-top:6px;" onclick="addHoursException(' + bi + ')">+ Add Exception</button>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<button class="hours-add-btn" style="margin-top:2px;border-style:solid;" onclick="addHoursBranch()">+ Add Branch</button>';
+  body.innerHTML = html;
+  var statusEl = document.getElementById('hours-status');
+  if (statusEl) {
+    var count = branches.reduce(function(acc, b) { return acc + (b.exceptions ? b.exceptions.length : 0); }, 0);
+    statusEl.textContent = branches.length + ' branch' + (branches.length > 1 ? 'es' : '') + (count > 0 ? ', ' + count + ' exception(s)' : '');
+  }
+}
+
+function readBizHoursForm() {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return null;
+  var panels = container.querySelectorAll('.hours-branch-panel');
+  var branches = [];
+  panels.forEach(function(panel) {
+    var nameInput = panel.querySelector('.hours-branch-name');
+    var name = nameInput ? nameInput.value.trim() : 'Main Branch';
+    var dayRows = panel.querySelectorAll('.hours-day-row');
+    var hours = [];
+    dayRows.forEach(function(row) {
+      var dayLabel = row.querySelector('.hours-day-label');
+      var day = dayLabel ? dayLabel.textContent.toLowerCase() : '';
+      var dayKey = { mon:'monday', tue:'tuesday', wed:'wednesday', thu:'thursday', fri:'friday', sat:'saturday', sun:'sunday' }[day] || day;
+      var open = row.querySelector('.hours-open');
+      var breakStart = row.querySelector('.hours-break-start');
+      var breakEnd = row.querySelector('.hours-break-end');
+      var close = row.querySelector('.hours-close');
+      var closedCb = row.querySelector('.hours-closed-toggle input');
+      var closed = closedCb ? closedCb.checked : false;
+      hours.push({
+        day: dayKey,
+        open: closed ? null : (open ? open.value || null : null),
+        breakStart: closed ? null : (breakStart ? breakStart.value || null : null),
+        breakEnd: closed ? null : (breakEnd ? breakEnd.value || null : null),
+        close: closed ? null : (close ? close.value || null : null),
+        closed: closed
+      });
+    });
+    var exceptionRows = panel.querySelectorAll('.hours-exception-row');
+    var exceptions = [];
+    exceptionRows.forEach(function(row) {
+      var date = row.querySelector('.hours-date-input');
+      var label = row.querySelector('.hours-label-input');
+      var closedCb = row.querySelector('.hours-closed-toggle input');
+      exceptions.push({
+        date: date ? date.value : '',
+        label: label ? label.value.trim() : '',
+        closed: closedCb ? closedCb.checked : false,
+        open: null,
+        close: null
+      });
+    });
+    branches.push({ name: name, hours: hours, exceptions: exceptions });
+  });
+  if (branches.length === 0 || !branches[0].hours.some(function(h) { return h.open || h.close || h.closed; })) return null;
+  return { branches: branches };
+}
+
+function updateHoursField(bi, di, field, value) {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panel = container.querySelectorAll('.hours-branch-panel')[bi];
+  if (!panel) return;
+  var rows = panel.querySelectorAll('.hours-day-row');
+  var row = rows[di];
+  if (!row) return;
+  var inputMap = { open: 'hours-open', breakStart: 'hours-break-start', breakEnd: 'hours-break-end', close: 'hours-close' };
+  var el = row.querySelector('.' + inputMap[field]);
+  if (el) el.value = value;
+}
+window.updateHoursField = updateHoursField;
+
+function updateHoursClosed(bi, di, checked) {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panel = container.querySelectorAll('.hours-branch-panel')[bi];
+  if (!panel) return;
+  var rows = panel.querySelectorAll('.hours-day-row');
+  var row = rows[di];
+  if (!row) return;
+  var inputs = row.querySelectorAll('.hours-time-input');
+  inputs.forEach(function(inp) { inp.disabled = checked; if (checked) inp.value = ''; });
+  var cb = row.querySelector('.hours-closed-toggle input');
+  if (cb) cb.checked = checked;
+}
+window.updateHoursClosed = updateHoursClosed;
+
+function addHoursBranch() {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panels = container.querySelectorAll('.hours-branch-panel');
+  var count = panels.length;
+  var div = document.createElement('div');
+  div.className = 'hours-branch-panel';
+  div.setAttribute('data-branch-index', count);
+  var header = document.createElement('div');
+  header.className = 'hours-branch-header';
+  header.innerHTML = '<input class="hours-branch-name" value="Branch ' + (count + 1) + '" placeholder="Branch name" onchange="updateHoursBranchName(' + count + ',this.value)">';
+  header.innerHTML += '<button class="hours-remove-btn" onclick="removeHoursBranch(' + count + ')">Remove</button>';
+  div.appendChild(header);
+  var daysSection = document.createElement('div');
+  daysSection.className = 'hours-days-section';
+  HOURS_DAY_KEYS.forEach(function(d, di) {
+    var row = document.createElement('div');
+    row.className = 'hours-day-row';
+    row.innerHTML = '<span class="hours-day-label">' + HOURS_DAY_LABELS[d] + '</span>';
+    row.innerHTML += '<input type="time" class="hours-time-input hours-open" onchange="updateHoursField(' + count + ',' + di + ',\'open\',this.value)">';
+    row.innerHTML += '<span class="hours-break-sep">break</span>';
+    row.innerHTML += '<input type="time" class="hours-time-input hours-break-start" onchange="updateHoursField(' + count + ',' + di + ',\'breakStart\',this.value)">';
+    row.innerHTML += '<span class="hours-break-sep">to</span>';
+    row.innerHTML += '<input type="time" class="hours-time-input hours-break-end" onchange="updateHoursField(' + count + ',' + di + ',\'breakEnd\',this.value)">';
+    row.innerHTML += '<input type="time" class="hours-time-input hours-close" onchange="updateHoursField(' + count + ',' + di + ',\'close\',this.value)">';
+    row.innerHTML += '<label class="hours-closed-toggle"><input type="checkbox" onchange="updateHoursClosed(' + count + ',' + di + ',this.checked)"> Closed</label>';
+    daysSection.appendChild(row);
+  });
+  div.appendChild(daysSection);
+  var addEx = document.createElement('button');
+  addEx.className = 'hours-add-btn';
+  addEx.style.cssText = 'margin-top:6px;';
+  addEx.textContent = '+ Add Exception';
+  addEx.onclick = function() { addHoursException(count); };
+  div.appendChild(addEx);
+  container.appendChild(div);
+  var statusEl = document.getElementById('hours-status');
+  if (statusEl) {
+    var totalBranches = container.querySelectorAll('.hours-branch-panel').length;
+    statusEl.textContent = totalBranches + ' branches';
+  }
+}
+window.addHoursBranch = addHoursBranch;
+
+function removeHoursBranch(bi) {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panels = container.querySelectorAll('.hours-branch-panel');
+  if (panels.length <= 1) return;
+  var panel = panels[bi];
+  if (panel) panel.remove();
+  var remaining = container.querySelectorAll('.hours-branch-panel');
+  remaining.forEach(function(p, i) {
+    p.setAttribute('data-branch-index', i);
+    var nameInput = p.querySelector('.hours-branch-name');
+    if (nameInput) nameInput.onchange = function(v) { updateHoursBranchName(i, v); };
+    var removeBtn = p.querySelector('.hours-remove-btn');
+    if (removeBtn) removeBtn.onclick = function() { removeHoursBranch(i); };
+    var dayRows = p.querySelectorAll('.hours-day-row');
+    dayRows.forEach(function(row, di) {
+      var fields = ['open','breakStart','breakEnd','close'];
+      fields.forEach(function(f) {
+        var cls = { open:'hours-open', breakStart:'hours-break-start', breakEnd:'hours-break-end', close:'hours-close' }[f];
+        var el = row.querySelector('.' + cls);
+        if (el) el.onchange = function() { updateHoursField(i, di, f, el.value); };
+      });
+      var cb = row.querySelector('.hours-closed-toggle input');
+      if (cb) cb.onchange = function() { updateHoursClosed(i, di, cb.checked); };
+    });
+    var addExBtn = p.querySelector('.hours-add-btn');
+    if (addExBtn) addExBtn.onclick = function() { addHoursException(i); };
+  });
+  var statusEl = document.getElementById('hours-status');
+  if (statusEl) {
+    var rem = container.querySelectorAll('.hours-branch-panel').length;
+    statusEl.textContent = rem + ' branch' + (rem > 1 ? 'es' : '');
+  }
+}
+window.removeHoursBranch = removeHoursBranch;
+
+function updateHoursBranchName(bi, value) {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panels = container.querySelectorAll('.hours-branch-panel');
+  var panel = panels[bi];
+  if (!panel) return;
+  var nameInput = panel.querySelector('.hours-branch-name');
+  if (nameInput) nameInput.value = value;
+}
+window.updateHoursBranchName = updateHoursBranchName;
+
+function addHoursException(bi) {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panels = container.querySelectorAll('.hours-branch-panel');
+  var panel = panels[bi];
+  if (!panel) return;
+  var exSection = panel.querySelector('.hours-exceptions-section');
+  var placeholder;
+  if (!exSection) {
+    exSection = document.createElement('div');
+    exSection.className = 'hours-exceptions-section';
+    var title = document.createElement('div');
+    title.className = 'hours-exceptions-title';
+    title.textContent = 'Exceptions';
+    exSection.appendChild(title);
+    var addExBtn = panel.querySelector('.hours-add-btn');
+    if (addExBtn) {
+      panel.insertBefore(exSection, addExBtn);
+    } else {
+      panel.appendChild(exSection);
+    }
+  }
+  var existingExceptions = exSection.querySelectorAll('.hours-exception-row');
+  var ei = existingExceptions.length;
+  var row = document.createElement('div');
+  row.className = 'hours-exception-row';
+  var exDate = new Date();
+  var dateStr = exDate.getFullYear() + '-' + String(exDate.getMonth()+1).padStart(2,'0') + '-' + String(exDate.getDate()).padStart(2,'0');
+  row.innerHTML = '<input type="date" class="hours-date-input" value="' + dateStr + '" onchange="updateHoursException(' + bi + ',' + ei + ',\'date\',this.value)">';
+  row.innerHTML += '<input class="hours-label-input" placeholder="Label (e.g. Public Holiday)" onchange="updateHoursException(' + bi + ',' + ei + ',\'label\',this.value)">';
+  row.innerHTML += '<label class="hours-closed-toggle"><input type="checkbox" checked onchange="updateHoursExceptionClosed(' + bi + ',' + ei + ',this.checked)"> Closed</label>';
+  row.innerHTML += '<button class="hours-remove-btn" style="font-size:11px;" onclick="removeHoursException(' + bi + ',' + ei + ')">X</button>';
+  exSection.appendChild(row);
+  var statusEl = document.getElementById('hours-status');
+  if (statusEl) statusEl.textContent = panels.length + ' branch' + (panels.length > 1 ? 'es' : '') + ', ' + (ei + 1) + ' exception(s)';
+}
+window.addHoursException = addHoursException;
+
+function removeHoursException(bi, ei) {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panels = container.querySelectorAll('.hours-branch-panel');
+  var panel = panels[bi];
+  if (!panel) return;
+  var section = panel.querySelector('.hours-exceptions-section');
+  if (!section) return;
+  var rows = section.querySelectorAll('.hours-exception-row');
+  var row = rows[ei];
+  if (row) row.remove();
+  var remaining = section.querySelectorAll('.hours-exception-row');
+  remaining.forEach(function(r, idx) {
+    var dateInput = r.querySelector('.hours-date-input');
+    if (dateInput) dateInput.onchange = function() { updateHoursException(bi, idx, 'date', dateInput.value); };
+    var labelInput = r.querySelector('.hours-label-input');
+    if (labelInput) labelInput.onchange = function() { updateHoursException(bi, idx, 'label', labelInput.value); };
+    var cb = r.querySelector('.hours-closed-toggle input');
+    if (cb) cb.onchange = function() { updateHoursExceptionClosed(bi, idx, cb.checked); };
+    var removeBtn = r.querySelector('.hours-remove-btn');
+    if (removeBtn) removeBtn.onclick = function() { removeHoursException(bi, idx); };
+  });
+  if (remaining.length === 0) section.remove();
+  var statusEl = document.getElementById('hours-status');
+  if (statusEl) {
+    var totalEx = 0;
+    panels.forEach(function(p) { var s = p.querySelector('.hours-exceptions-section'); if (s) totalEx += s.querySelectorAll('.hours-exception-row').length; });
+    statusEl.textContent = panels.length + ' branch' + (panels.length > 1 ? 'es' : '') + ', ' + totalEx + ' exception(s)';
+  }
+}
+window.removeHoursException = removeHoursException;
+
+function updateHoursException(bi, ei, field, value) {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panels = container.querySelectorAll('.hours-branch-panel');
+  var panel = panels[bi];
+  if (!panel) return;
+  var section = panel.querySelector('.hours-exceptions-section');
+  if (!section) return;
+  var rows = section.querySelectorAll('.hours-exception-row');
+  var row = rows[ei];
+  if (!row) return;
+  if (field === 'date') {
+    var inp = row.querySelector('.hours-date-input');
+    if (inp) inp.value = value;
+  } else if (field === 'label') {
+    var inp = row.querySelector('.hours-label-input');
+    if (inp) inp.value = value;
+  }
+}
+window.updateHoursException = updateHoursException;
+
+function updateHoursExceptionClosed(bi, ei, checked) {
+  var container = document.getElementById('hours-branches-container');
+  if (!container) return;
+  var panels = container.querySelectorAll('.hours-branch-panel');
+  var panel = panels[bi];
+  if (!panel) return;
+  var section = panel.querySelector('.hours-exceptions-section');
+  if (!section) return;
+  var rows = section.querySelectorAll('.hours-exception-row');
+  var row = rows[ei];
+  if (!row) return;
+  var cb = row.querySelector('.hours-closed-toggle input');
+  if (cb) cb.checked = checked;
+}
+window.updateHoursExceptionClosed = updateHoursExceptionClosed;
 
 window.installApp = installApp;
 window.clearAppCache = clearAppCache;
