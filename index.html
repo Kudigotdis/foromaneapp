@@ -104,10 +104,11 @@
     #app-onboard.active { display: flex; }
     .onboard-slides {
       flex: 1; display: flex; overflow: hidden;
-      position: relative;
+      position: relative; width: 100%;
     }
     .onboard-slide {
-      flex: 0 0 100%; display: flex;
+      flex: 0 0 100%; width: 100%; min-width: 100%;
+      display: flex;
       flex-direction: column; align-items: center;
       justify-content: center; padding: 40px 32px;
       text-align: center;
