@@ -24,8 +24,175 @@
   <link rel="preload" as="image" href="assets/icons/solid/address-book-2_inactive.webp">
   <link rel="preload" as="image" href="assets/icons/solid/clipboard-list_inactive.webp">
   <link rel="preload" as="image" href="assets/icons/solid/user-circle_inactive.webp">
+
+  <!-- ── SPLASH SCREEN ── -->
+  <style>
+    #app-splash {
+      position: fixed; inset: 0; z-index: 99999;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.4s ease;
+    }
+    .splash-content {
+      text-align: center; padding: 32px;
+    }
+    .splash-logo {
+      width: 140px; height: auto; margin-bottom: 24px;
+      display: block; margin-left: auto; margin-right: auto;
+    }
+    .splash-status {
+      margin-top: 20px;
+      font: 500 15px/1.4 'Barlow', sans-serif;
+      color: #888;
+    }
+    .splash-skip {
+      margin-top: 28px;
+      background: none; border: none;
+      font: 500 14px/1 'Barlow', sans-serif;
+      color: #fd7600; cursor: pointer;
+      padding: 8px 20px; border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .splash-skip:hover { background: rgba(253,118,0,0.08); }
+    .splash-skip:active { background: rgba(253,118,0,0.15); }
+
+    /* Loader spinner */
+    .loader {
+      width: 50px;
+      aspect-ratio: 1;
+      display: grid;
+      color: #fd7600;
+      background: radial-gradient(farthest-side, currentColor calc(100% - 6px),#0000 calc(100% - 5px) 0);
+      -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 13px),#000 calc(100% - 12px));
+      border-radius: 50%;
+      animation: l19 2s infinite linear;
+      margin: 0 auto;
+    }
+    .loader::before,
+    .loader::after {
+      content: "";
+      grid-area: 1/1;
+      background:
+        linear-gradient(currentColor 0 0) center,
+        linear-gradient(currentColor 0 0) center;
+      background-size: 100% 10px,10px 100%;
+      background-repeat: no-repeat;
+    }
+    .loader::after { transform: rotate(45deg); }
+    @keyframes l19 { 100%{transform: rotate(1turn)} }
+  </style>
+
+  <script>
+    /* ─── Splash loader: preload assets, smart timing, skip ─── */
+    (function(){
+      var ASSETS = [
+        'assets/icons/solid/user-circle_inactive.webp',
+        'assets/icons/solid/clipboard-list_inactive.webp',
+        'assets/icons/solid/share-nodes_whatsapp_green.webp',
+        'assets/icons/solid/add-to-note_orange.webp',
+        'assets/icons/solid/bullhorn-2_active.webp',
+        'assets/icons/solid/address-book-2_inactive.webp',
+        'assets/icons/solid/check-2_orange.webp',
+        'assets/icons/solid/xmark_orange.webp',
+        'assets/icons/solid/chevron-left_white.webp',
+        'assets/icons/solid/delete_icon_orange.webp',
+        'assets/icons/heart_active_icon.webp',
+        'assets/icons/heart_inactive_icon.webp',
+        'assets/icons/facebook_icon_on.webp',
+        'assets/icons/facebook_icon_f.webp',
+        'assets/icons/circle-flag-of-botswana.webp',
+        'assets/icons/search_icon.svg',
+        'assets/images/company_logos_dummy/foromane_logo_thumbnail.webp',
+        'assets/images/company_logos_dummy/foromane_logo_icon_online.png',
+        'assets/images/company_logos_dummy/Foromane_logo_no_background_1.png',
+        'assets/media/foromane_place_holder_image.webp',
+        'assets/logos/fnb_logo_2.png',
+        'assets/logos/btc_logo.png',
+        'assets/logos/mascom_logo.png',
+        'assets/logos/orange_logo.png',
+        'assets/logos/absa_logo.png',
+        'assets/logos/stanbic_logo.png'
+      ];
+
+      var MIN_MS = 3500;
+      var MAX_MS = 10000;
+      var start = Date.now();
+      var loaded = 0;
+      var total = ASSETS.length;
+      var done = false;
+
+      var splash = document.getElementById('app-splash');
+      var statusEl = document.getElementById('splash-status');
+
+      var messages = [
+        { txt: 'Loading icons\u2026', at: 0.15 },
+        { txt: 'Preparing experience\u2026', at: 0.40 },
+        { txt: 'Almost ready\u2026', at: 0.70 },
+        { txt: 'Ready!', at: 1.0 }
+      ];
+
+      function updateStatus(pct) {
+        if (!statusEl) return;
+        for (var i = messages.length - 1; i >= 0; i--) {
+          if (pct >= messages[i].at) { statusEl.textContent = messages[i].txt; break; }
+        }
+      }
+
+      function finish() {
+        if (done) return;
+        done = true;
+        if (!splash) return;
+        splash.style.opacity = '0';
+        setTimeout(function(){ splash.style.display = 'none'; }, 400);
+      }
+
+      function check() {
+        if (done) return;
+        var elapsed = Date.now() - start;
+        var pct = total > 0 ? loaded / total : 0.5;
+        updateStatus(pct);
+        if (pct >= 1 && elapsed >= MIN_MS) finish();
+        else if (elapsed >= MAX_MS) finish();
+      }
+
+      /* preload each asset */
+      for (var i = 0; i < ASSETS.length; i++) {
+        (function(src){
+          var img = new Image();
+          img.onload = img.onerror = function(){ loaded++; check(); };
+          img.src = src;
+        })(ASSETS[i]);
+      }
+
+      /* update status periodically */
+      var ticker = setInterval(function(){
+        if (done) { clearInterval(ticker); return; }
+        var pct = total > 0 ? loaded / total : 0.5;
+        updateStatus(pct);
+      }, 300);
+
+      /* expose skip */
+      window.skipSplash = function(){
+        done = true;
+        clearInterval(ticker);
+        finish();
+      };
+    })();
+  </script>
+
 </head>
 <body id="app">
+
+  <!-- ── SPLASH OVERLAY ── -->
+  <div id="app-splash">
+    <div class="splash-content">
+      <img src="assets/images/company_logos_dummy/Foromane%20Logo%20White%20Background.webp"
+           alt="Foromane" class="splash-logo" loading="eager">
+      <div class="loader"></div>
+      <div class="splash-status" id="splash-status">Loading icons&hellip;</div>
+      <button class="splash-skip" onclick="window.skipSplash()">Skip</button>
+    </div>
+  </div>
 
   <!-- ── HEADER ── -->
   <header id="app-header" class="shell-hidden">
