@@ -383,7 +383,7 @@ async function loadVerifiedBrands() {
     });
     return brands;
   } catch (e) {
-    console.warn('Could not load verified brands from Firestore:', e.message);
+    console.debug('Could not load verified brands from Firestore:', e.message);
     return [];
   }
 }

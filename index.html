@@ -34,19 +34,34 @@
       transition: opacity 0.4s ease;
     }
     .splash-content {
-      text-align: center; padding: 32px;
+      text-align: center; padding: 32px; max-width: 380px;
     }
     .splash-logo {
-      width: 140px; height: auto; margin-bottom: 24px;
+      width: 280px; height: auto; margin-bottom: 20px;
       display: block; margin-left: auto; margin-right: auto;
     }
+    /* progress bar */
+    .splash-bar-wrap {
+      width: 100%; height: 6px;
+      background: #ececec; border-radius: 3px;
+      margin: 16px 0 6px; overflow: hidden;
+    }
+    .splash-bar-fill {
+      width: 0%; height: 100%;
+      background: #fd7600; border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    .splash-progress {
+      font: 500 13px/1.4 'Barlow', sans-serif;
+      color: #aaa;
+    }
     .splash-status {
-      margin-top: 20px;
+      margin-top: 6px;
       font: 500 15px/1.4 'Barlow', sans-serif;
       color: #888;
     }
     .splash-skip {
-      margin-top: 28px;
+      margin-top: 24px;
       background: none; border: none;
       font: 500 14px/1 'Barlow', sans-serif;
       color: #fd7600; cursor: pointer;
@@ -55,7 +70,6 @@
     }
     .splash-skip:hover { background: rgba(253,118,0,0.08); }
     .splash-skip:active { background: rgba(253,118,0,0.15); }
-
     /* Loader spinner */
     .loader {
       width: 50px;
@@ -80,62 +94,148 @@
     }
     .loader::after { transform: rotate(45deg); }
     @keyframes l19 { 100%{transform: rotate(1turn)} }
+    /* ── Onboarding ── */
+    #app-onboard {
+      position: fixed; inset: 0; z-index: 99998;
+      background: #fff;
+      display: none; flex-direction: column;
+      transition: opacity 0.3s ease;
+    }
+    #app-onboard.active { display: flex; }
+    .onboard-slides {
+      flex: 1; display: flex; overflow: hidden;
+      position: relative;
+    }
+    .onboard-slide {
+      flex: 0 0 100%; display: flex;
+      flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px 32px;
+      text-align: center;
+    }
+    .onboard-icon { font-size: 64px; margin-bottom: 20px; }
+    .onboard-title {
+      font: 700 22px/1.2 'Barlow Condensed', sans-serif;
+      color: #2a2a2a; margin-bottom: 10px;
+    }
+    .onboard-desc {
+      font: 400 15px/1.5 'Barlow', sans-serif;
+      color: #666; max-width: 300px;
+    }
+    .onboard-dots {
+      display: flex; gap: 8px; justify-content: center;
+      padding: 0 32px 20px;
+    }
+    .onboard-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #ddd; transition: background 0.2s;
+    }
+    .onboard-dot.active { background: #fd7600; }
+    .onboard-footer {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 16px 32px 32px;
+    }
+    .onboard-btn {
+      background: none; border: none;
+      font: 600 15px/1 'Barlow', sans-serif;
+      color: #fd7600; cursor: pointer;
+      padding: 10px 16px; border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .onboard-btn:hover { background: rgba(253,118,0,0.08); }
+    .onboard-btn-primary {
+      background: #fd7600; color: #fff;
+    }
+    .onboard-btn-primary:hover { background: #e56a00; }
+    .onboard-btn-muted { color: #aaa; }
   </style>
 
   <script>
-    /* ─── Splash loader: preload assets, smart timing, skip ─── */
+    /* ─── Splash loader: preload, % progress, wait for Auth, skip ─── */
     (function(){
+      /* assets with estimated sizes (KB) for MB tracking */
       var ASSETS = [
-        'assets/icons/solid/user-circle_inactive.webp',
-        'assets/icons/solid/clipboard-list_inactive.webp',
-        'assets/icons/solid/share-nodes_whatsapp_green.webp',
-        'assets/icons/solid/add-to-note_orange.webp',
-        'assets/icons/solid/bullhorn-2_active.webp',
-        'assets/icons/solid/address-book-2_inactive.webp',
-        'assets/icons/solid/check-2_orange.webp',
-        'assets/icons/solid/xmark_orange.webp',
-        'assets/icons/solid/chevron-left_white.webp',
-        'assets/icons/solid/delete_icon_orange.webp',
-        'assets/icons/heart_active_icon.webp',
-        'assets/icons/heart_inactive_icon.webp',
-        'assets/icons/facebook_icon_on.webp',
-        'assets/icons/facebook_icon_f.webp',
-        'assets/icons/circle-flag-of-botswana.webp',
-        'assets/icons/search_icon.svg',
-        'assets/images/company_logos_dummy/foromane_logo_thumbnail.webp',
-        'assets/images/company_logos_dummy/foromane_logo_icon_online.png',
-        'assets/images/company_logos_dummy/Foromane_logo_no_background_1.png',
-        'assets/media/foromane_place_holder_image.webp',
-        'assets/logos/fnb_logo_2.png',
-        'assets/logos/btc_logo.png',
-        'assets/logos/mascom_logo.png',
-        'assets/logos/orange_logo.png',
-        'assets/logos/absa_logo.png',
-        'assets/logos/stanbic_logo.png'
+        { path: 'assets/icons/solid/user-circle_inactive.webp', size: 6 },
+        { path: 'assets/icons/solid/clipboard-list_inactive.webp', size: 5 },
+        { path: 'assets/icons/solid/share-nodes_whatsapp_green.webp', size: 4 },
+        { path: 'assets/icons/solid/add-to-note_orange.webp', size: 3 },
+        { path: 'assets/icons/solid/bullhorn-2_active.webp', size: 6 },
+        { path: 'assets/icons/solid/address-book-2_inactive.webp', size: 5 },
+        { path: 'assets/icons/solid/check-2_orange.webp', size: 3 },
+        { path: 'assets/icons/solid/xmark_orange.webp', size: 3 },
+        { path: 'assets/icons/solid/chevron-left_white.webp', size: 3 },
+        { path: 'assets/icons/solid/delete_icon_orange.webp', size: 4 },
+        { path: 'assets/icons/heart_active_icon.webp', size: 5 },
+        { path: 'assets/icons/heart_inactive_icon.webp', size: 5 },
+        { path: 'assets/icons/facebook_icon_on.webp', size: 4 },
+        { path: 'assets/icons/facebook_icon_f.webp', size: 3 },
+        { path: 'assets/icons/circle-flag-of-botswana.webp', size: 8 },
+        { path: 'assets/icons/search_icon.svg', size: 2 },
+        { path: 'assets/images/company_logos_dummy/foromane_logo_thumbnail.webp', size: 10 },
+        { path: 'assets/images/company_logos_dummy/foromane_logo_icon_online.png', size: 15 },
+        { path: 'assets/images/company_logos_dummy/Foromane_logo_no_background_1.png', size: 20 },
+        { path: 'assets/media/foromane_place_holder_image.webp', size: 12 },
+        { path: 'assets/logos/fnb_logo_2.png', size: 18 },
+        { path: 'assets/logos/btc_logo.png', size: 16 },
+        { path: 'assets/logos/mascom_logo.png', size: 14 },
+        { path: 'assets/logos/orange_logo.png', size: 16 },
+        { path: 'assets/logos/absa_logo.png', size: 15 },
+        { path: 'assets/logos/stanbic_logo.png', size: 14 }
       ];
 
-      var MIN_MS = 3500;
-      var MAX_MS = 10000;
-      var start = Date.now();
-      var loaded = 0;
-      var total = ASSETS.length;
+      var totalBytes = ASSETS.reduce(function(s, a){ return s + a.size; }, 0);
+      var loadedBytes = 0;
+      var loadedCount = 0;
+      var totalCount = ASSETS.length;
       var done = false;
+      var start = Date.now();
+      var MIN_MS = 1500;
 
       var splash = document.getElementById('app-splash');
       var statusEl = document.getElementById('splash-status');
+      var progressEl = document.getElementById('splash-progress');
+      var barFill = document.getElementById('splash-bar-fill');
 
       var messages = [
-        { txt: 'Loading icons\u2026', at: 0.15 },
-        { txt: 'Preparing experience\u2026', at: 0.40 },
-        { txt: 'Almost ready\u2026', at: 0.70 },
-        { txt: 'Ready!', at: 1.0 }
+        { txt: 'Checking connection\u2026', at: 0.00 },
+        { txt: 'Loading interface elements\u2026', at: 0.15 },
+        { txt: 'Preparing business profiles\u2026', at: 0.35 },
+        { txt: 'Setting up offline-ready cache\u2026', at: 0.55 },
+        { txt: 'Optimizing your experience\u2026', at: 0.75 },
+        { txt: 'Ready!', at: 0.95 }
       ];
 
-      function updateStatus(pct) {
-        if (!statusEl) return;
-        for (var i = messages.length - 1; i >= 0; i--) {
-          if (pct >= messages[i].at) { statusEl.textContent = messages[i].txt; break; }
+      /* polling guard for Browse button */
+      window.browseAsGuest = function(){
+        if (window.Auth) return Auth.loginAsGuest();
+        setTimeout(window.browseAsGuest, 50);
+      };
+      window.skipSplash = function(){ done = true; finish(); };
+
+      function updateUI(pct) {
+        if (barFill) barFill.style.width = Math.round(pct * 100) + '%';
+        var loadedKb = Math.round(loadedBytes);
+        var totalKb = Math.round(totalBytes);
+        if (progressEl) progressEl.textContent = Math.round(pct * 100) + '% (' + loadedKb + ' KB / ' + totalKb + ' KB)';
+        if (statusEl) {
+          for (var i = messages.length - 1; i >= 0; i--) {
+            if (pct >= messages[i].at) { statusEl.textContent = messages[i].txt; break; }
+          }
         }
+      }
+
+      function canFinish() {
+        var elapsed = Date.now() - start;
+        var pct = totalCount > 0 ? loadedCount / totalCount : 0.5;
+        var minPassed = elapsed >= MIN_MS;
+        var scriptsReady = typeof window.Auth !== 'undefined';
+        return pct >= 1 && minPassed && scriptsReady;
+      }
+
+      function check() {
+        if (done) return;
+        var pct = totalCount > 0 ? loadedCount / totalCount : 0.5;
+        updateUI(pct);
+        if (canFinish()) finish();
       }
 
       function finish() {
@@ -143,40 +243,41 @@
         done = true;
         if (!splash) return;
         splash.style.opacity = '0';
-        setTimeout(function(){ splash.style.display = 'none'; }, 400);
-      }
-
-      function check() {
-        if (done) return;
-        var elapsed = Date.now() - start;
-        var pct = total > 0 ? loaded / total : 0.5;
-        updateStatus(pct);
-        if (pct >= 1 && elapsed >= MIN_MS) finish();
-        else if (elapsed >= MAX_MS) finish();
+        setTimeout(function(){
+          splash.style.display = 'none';
+          /* show onboarding on first visit */
+          try {
+            if (!localStorage.getItem('foromane_onboard_done')) {
+              var ob = document.getElementById('app-onboard');
+              if (ob) ob.classList.add('active');
+            }
+          } catch(e){}
+        }, 400);
       }
 
       /* preload each asset */
       for (var i = 0; i < ASSETS.length; i++) {
-        (function(src){
+        (function(a){
           var img = new Image();
-          img.onload = img.onerror = function(){ loaded++; check(); };
-          img.src = src;
+          img.onload = img.onerror = function(){
+            loadedCount++;
+            loadedBytes += a.size;
+            check();
+          };
+          img.src = a.path;
         })(ASSETS[i]);
       }
 
-      /* update status periodically */
+      /* periodic update */
       var ticker = setInterval(function(){
         if (done) { clearInterval(ticker); return; }
-        var pct = total > 0 ? loaded / total : 0.5;
-        updateStatus(pct);
-      }, 300);
+        var pct = totalCount > 0 ? loadedCount / totalCount : 0.5;
+        updateUI(pct);
+        if (canFinish()) finish();
+      }, 200);
 
-      /* expose skip */
-      window.skipSplash = function(){
-        done = true;
-        clearInterval(ticker);
-        finish();
-      };
+      /* initial UI */
+      updateUI(0);
     })();
   </script>
 
@@ -189,10 +290,98 @@
       <img src="assets/images/company_logos_dummy/Foromane%20Logo%20White%20Background.webp"
            alt="Foromane" class="splash-logo" loading="eager">
       <div class="loader"></div>
+      <div class="splash-bar-wrap"><div class="splash-bar-fill" id="splash-bar-fill"></div></div>
+      <div class="splash-progress" id="splash-progress">0% (0 KB / 0 KB)</div>
       <div class="splash-status" id="splash-status">Loading icons&hellip;</div>
       <button class="splash-skip" onclick="window.skipSplash()">Skip</button>
     </div>
   </div>
+
+  <!-- ── ONBOARDING ── -->
+  <div id="app-onboard">
+    <div class="onboard-slides" id="onboard-slides">
+      <div class="onboard-slide">
+        <div class="onboard-icon">🏗️</div>
+        <div class="onboard-title">Welcome to Foromane</div>
+        <div class="onboard-desc">Your construction hub for Botswana. Discover businesses, save promos, and connect with suppliers — all in one place.</div>
+      </div>
+      <div class="onboard-slide">
+        <div class="onboard-icon">📢</div>
+        <div class="onboard-title">Browse Promos</div>
+        <div class="onboard-desc">Discover the latest deals and promotions from businesses near you. Tap a promo to see details, adjust quantities, and save items.</div>
+      </div>
+      <div class="onboard-slide">
+        <div class="onboard-icon">📝</div>
+        <div class="onboard-title">Save Notes</div>
+        <div class="onboard-desc">Organise items by project, add notes, and share estimates with your suppliers — all in one place.</div>
+      </div>
+      <div class="onboard-slide">
+        <div class="onboard-icon">📡</div>
+        <div class="onboard-title">Works Offline</div>
+        <div class="onboard-desc">Your notes, promos, and business data are cached locally. Browse and edit even without an internet connection.</div>
+      </div>
+      <div class="onboard-slide">
+        <div class="onboard-icon">💬</div>
+        <div class="onboard-title">Connect &amp; Share</div>
+        <div class="onboard-desc">Share promos and estimates directly via WhatsApp. Contact businesses with one tap.</div>
+      </div>
+      <div class="onboard-slide">
+        <div class="onboard-icon">🚀</div>
+        <div class="onboard-title">Ready!</div>
+        <div class="onboard-desc">You're all set. Browse as a guest, create a profile, or log in to get started.</div>
+      </div>
+    </div>
+    <div class="onboard-dots" id="onboard-dots"></div>
+    <div class="onboard-footer">
+      <button class="onboard-btn onboard-btn-muted" onclick="skipOnboard()">Skip</button>
+      <div style="display:flex;gap:8px;">
+        <button class="onboard-btn" id="onboard-prev" onclick="onboardPrev()" style="display:none;">← Back</button>
+        <button class="onboard-btn onboard-btn-primary" id="onboard-next" onclick="onboardNext()">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ─── Onboarding slides ─── */
+    (function(){
+      var slides = document.getElementById('onboard-slides');
+      var dots = document.getElementById('onboard-dots');
+      var nextBtn = document.getElementById('onboard-next');
+      var prevBtn = document.getElementById('onboard-prev');
+      if (!slides) return;
+      var total = slides.children.length;
+      var current = 0;
+      /* create dots */
+      for (var i = 0; i < total; i++) {
+        var dot = document.createElement('div');
+        dot.className = 'onboard-dot' + (i === 0 ? ' active' : '');
+        dots.appendChild(dot);
+      }
+      function goTo(idx) {
+        if (idx < 0 || idx >= total) return;
+        current = idx;
+        slides.style.transform = 'translateX(-' + (idx * 100) + '%)';
+        slides.style.transition = 'transform 0.3s ease';
+        var allDots = dots.querySelectorAll('.onboard-dot');
+        for (var j = 0; j < allDots.length; j++) {
+          allDots[j].className = 'onboard-dot' + (j === idx ? ' active' : '');
+        }
+        if (prevBtn) prevBtn.style.display = idx === 0 ? 'none' : 'inline-block';
+        if (nextBtn) nextBtn.textContent = idx === total - 1 ? 'Get Started' : 'Next';
+      }
+      window.onboardNext = function(){
+        if (current >= total - 1) { skipOnboard(); return; }
+        goTo(current + 1);
+      };
+      window.onboardPrev = function(){ goTo(current - 1); };
+      window.skipOnboard = function(){
+        var ob = document.getElementById('app-onboard');
+        if (ob) { ob.classList.remove('active'); ob.style.display = 'none'; }
+        try { localStorage.setItem('foromane_onboard_done', '1'); } catch(e){}
+      };
+      goTo(0);
+    })();
+  </script>
 
   <!-- ── HEADER ── -->
   <header id="app-header" class="shell-hidden">
@@ -215,7 +404,7 @@
           <img src="assets/images/company_logos_dummy/Foromane_logo_no_background_1.png" alt="Foromane" class="welcome-logo" loading="eager">
         </div>
         <div class="welcome-buttons">
-          <button class="welcome-btn welcome-btn-primary" onclick="Auth.loginAsGuest()">Browse</button>
+          <button class="welcome-btn welcome-btn-primary" onclick="window.browseAsGuest()">Browse</button>
           <button class="welcome-btn welcome-btn-outline" onclick="goTo('view-login')">Login</button>
           <button class="welcome-btn welcome-btn-outline" onclick="goTo('view-register');initRegisterView();">Create Profile</button>
         </div>
@@ -800,7 +989,7 @@
             <a href="#" onclick="event.preventDefault();goTo('view-register');initRegisterView();" style="color:var(--orange);">Create an account</a>
           </p>
           <p style="text-align:center;margin-top:8px;font-size:12px;color:var(--grey-mid);">
-            <a href="#" onclick="event.preventDefault();Auth.loginAsGuest();" style="color:var(--grey-dark);">Continue as Guest</a>
+            <a href="#" onclick="event.preventDefault();window.browseAsGuest();" style="color:var(--grey-dark);">Continue as Guest</a>
           </p>
           <p style="text-align:center;margin-top:6px;font-size:12px;">
             <a href="#" onclick="event.preventDefault();Auth.showForgotPassword();" style="color:var(--grey-dark);">Forgot password?</a>
