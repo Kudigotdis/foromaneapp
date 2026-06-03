@@ -3,24 +3,6 @@
    Routes relative paths → Firebase Storage CDN when enabled.
    ════════════════════════════════════════════════════════ */
 
-/* Self-destruct stale Service Workers and caches */
-(function(){
-  if ('caches' in window) {
-    caches.keys().then(function(keys) {
-      keys.forEach(function(k) {
-        if (k.startsWith('foromane-') || k.startsWith('offline-')){
-          caches.delete(k);
-        }
-      });
-    });
-  }
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.getRegistrations().then(function(regs) {
-      regs.forEach(function(r) { r.unregister(); });
-    }).catch(function(){});
-  }
-})();
-
 window.__STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/foromane-app.firebasestorage.app/o/';
 
 window.__USE_STORAGE = false; // Disabled — assets served locally from repo
