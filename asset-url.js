@@ -5,7 +5,7 @@
 
 window.__STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/foromane-app.firebasestorage.app/o/';
 
-window.__USE_STORAGE = location.protocol !== 'file:'; // Auto-disable on file:// (CORB)
+window.__USE_STORAGE = false; // Disabled — assets served locally from repo
 
 window.useStorage = function (enabled) {
   if (enabled === void 0) return window.__USE_STORAGE === true;
