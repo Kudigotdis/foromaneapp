@@ -104,15 +104,15 @@
     #app-onboard.active { display: flex; }
     .onboard-slides {
       flex: 1; display: flex; overflow: hidden;
-      position: relative; width: 100%;
+      position: relative;
     }
     .onboard-slide {
-      flex: 0 0 100%; width: 100%; min-width: 100%;
-      display: flex;
+      display: none;
       flex-direction: column; align-items: center;
       justify-content: center; padding: 40px 32px;
       text-align: center;
     }
+    .onboard-slide.active { display: flex; }
     .onboard-icon { font-size: 64px; margin-bottom: 20px; }
     .onboard-title {
       font: 700 22px/1.2 'Barlow Condensed', sans-serif;
@@ -353,8 +353,9 @@
       function goTo(idx) {
         if (idx < 0 || idx >= total) return;
         current = idx;
-        slides.style.transform = 'translateX(-' + (idx * 100) + '%)';
-        slides.style.transition = 'transform 0.3s ease';
+        for (var j = 0; j < slides.children.length; j++) {
+          slides.children[j].classList.toggle('active', j === idx);
+        }
         var allDots = dots.querySelectorAll('.onboard-dot');
         for (var j = 0; j < allDots.length; j++) {
           allDots[j].className = 'onboard-dot' + (j === idx ? ' active' : '');
