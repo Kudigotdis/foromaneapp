@@ -149,10 +149,25 @@
     .onboard-btn-muted { color: #aaa; }
   </style>
 
+</head>
+<body id="app">
+
+  <!-- ── SPLASH OVERLAY ── -->
+  <div id="app-splash">
+    <div class="splash-content">
+      <img src="assets/images/company_logos_dummy/Foromane%20Logo%20White%20Background.webp"
+           alt="Foromane" class="splash-logo" loading="eager">
+      <div class="loader"></div>
+      <div class="splash-bar-wrap"><div class="splash-bar-fill" id="splash-bar-fill"></div></div>
+      <div class="splash-progress" id="splash-progress">0% (0 KB / 0 KB)</div>
+      <div class="splash-status" id="splash-status">Loading icons&hellip;</div>
+      <button class="splash-skip" onclick="window.skipSplash()">Skip</button>
+    </div>
+  </div>
+
   <script>
     /* ─── Splash loader: preload, % progress, wait for Auth, skip ─── */
     (function(){
-      /* assets with estimated sizes (KB) for MB tracking */
       var ASSETS = [
         { path: 'assets/icons/solid/user-circle_inactive.webp', size: 6 },
         { path: 'assets/icons/solid/clipboard-list_inactive.webp', size: 5 },
@@ -204,7 +219,6 @@
         { txt: 'Ready!', at: 0.95 }
       ];
 
-      /* polling guard for Browse button */
       window.browseAsGuest = function(){
         if (window.Auth) return Auth.loginAsGuest();
         setTimeout(window.browseAsGuest, 50);
@@ -245,7 +259,6 @@
         splash.style.opacity = '0';
         setTimeout(function(){
           splash.style.display = 'none';
-          /* show onboarding on first visit */
           try {
             if (!localStorage.getItem('foromane_onboard_done')) {
               var ob = document.getElementById('app-onboard');
@@ -255,7 +268,6 @@
         }, 400);
       }
 
-      /* preload each asset */
       for (var i = 0; i < ASSETS.length; i++) {
         (function(a){
           var img = new Image();
@@ -268,7 +280,6 @@
         })(ASSETS[i]);
       }
 
-      /* periodic update */
       var ticker = setInterval(function(){
         if (done) { clearInterval(ticker); return; }
         var pct = totalCount > 0 ? loadedCount / totalCount : 0.5;
@@ -276,26 +287,9 @@
         if (canFinish()) finish();
       }, 200);
 
-      /* initial UI */
       updateUI(0);
     })();
   </script>
-
-</head>
-<body id="app">
-
-  <!-- ── SPLASH OVERLAY ── -->
-  <div id="app-splash">
-    <div class="splash-content">
-      <img src="assets/images/company_logos_dummy/Foromane%20Logo%20White%20Background.webp"
-           alt="Foromane" class="splash-logo" loading="eager">
-      <div class="loader"></div>
-      <div class="splash-bar-wrap"><div class="splash-bar-fill" id="splash-bar-fill"></div></div>
-      <div class="splash-progress" id="splash-progress">0% (0 KB / 0 KB)</div>
-      <div class="splash-status" id="splash-status">Loading icons&hellip;</div>
-      <button class="splash-skip" onclick="window.skipSplash()">Skip</button>
-    </div>
-  </div>
 
   <!-- ── ONBOARDING ── -->
   <div id="app-onboard">
@@ -342,7 +336,6 @@
   </div>
 
   <script>
-    /* ─── Onboarding slides ─── */
     (function(){
       var slides = document.getElementById('onboard-slides');
       var dots = document.getElementById('onboard-dots');
@@ -351,7 +344,6 @@
       if (!slides) return;
       var total = slides.children.length;
       var current = 0;
-      /* create dots */
       for (var i = 0; i < total; i++) {
         var dot = document.createElement('div');
         dot.className = 'onboard-dot' + (i === 0 ? ' active' : '');
