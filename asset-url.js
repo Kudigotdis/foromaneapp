@@ -14,10 +14,10 @@
       });
     });
   }
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.getRegistrations().then(function(regs) {
       regs.forEach(function(r) { r.unregister(); });
-    });
+    }).catch(function(){});
   }
 })();
 

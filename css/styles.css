@@ -434,7 +434,7 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
 /* ─── DIRECTORY CARD ─── */
 .dir-card-group { margin-bottom: 8px; }
 .dir-card {
-  background: white; border: 1px solid rgba(200,200,200,0.15);
+  background: white; border: 1px solid rgba(200,200,200,0.05);
   border-radius: 8px; padding: 14px 16px;
   display: flex; align-items: center; gap: 14px;
   cursor: pointer; transition: background-color 0.1s ease; user-select: none;

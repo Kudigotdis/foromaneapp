@@ -236,7 +236,7 @@ function renderDirectory() {
 
     if (idx < sortedLetters.length - 1) {
       const divider = document.createElement('hr');
-      divider.style.cssText = 'margin:0;border:none;border-top:1px solid rgba(0,0,0,0.2);';
+      divider.style.cssText = 'margin:0;border:none;border-top:1px solid rgba(0,0,0,0.05);';
       el.appendChild(divider);
     }
   });
@@ -336,7 +336,7 @@ function renderPros(el) {
 
     if (idx < sortedLettersPros.length - 1) {
       var divider = document.createElement('hr');
-      divider.style.cssText = 'margin:0;border:none;border-top:1px solid rgba(0,0,0,0.2);';
+      divider.style.cssText = 'margin:0;border:none;border-top:1px solid rgba(0,0,0,0.05);';
       el.appendChild(divider);
     }
   });
