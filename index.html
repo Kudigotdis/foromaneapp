@@ -296,15 +296,15 @@
         if (done) return;
         done = true;
         if (!splash) return;
+        try {
+          if (!localStorage.getItem('foromane_onboard_done')) {
+            var ob = document.getElementById('app-onboard');
+            if (ob) ob.classList.add('active');
+          }
+        } catch(e){}
         splash.style.opacity = '0';
         setTimeout(function(){
           splash.style.display = 'none';
-          try {
-            if (!localStorage.getItem('foromane_onboard_done')) {
-              var ob = document.getElementById('app-onboard');
-              if (ob) ob.classList.add('active');
-            }
-          } catch(e){}
         }, 400);
       }
 
