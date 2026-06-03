@@ -11,6 +11,7 @@
   <script>if (location.protocol !== 'file:') { var m=document.createElement('link'); m.rel='manifest'; m.href='manifest.json'; document.head.appendChild(m); }</script>
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/pwa/icon-192.png">
   <meta name="apple-mobile-web-app-title" content="Foromane">
+  <script>if ('caches' in window) { caches.keys().then(function(keys) { keys.forEach(function(k) { if (k.startsWith('foromane-')) caches.delete(k); }); }); }</script>
   <title>Foromane | Construction Hub</title>
   <link rel="icon" type="image/webp" href="assets/images/company_logos_dummy/foromane_logo_icon_online.png">
   <link rel="stylesheet" href="assets/fonts/fonts.css">

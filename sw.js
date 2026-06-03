@@ -1,4 +1,4 @@
-const CACHE = 'foromane-v7';
+const CACHE = 'foromane-v8';
 const ASSETS = [
   './',
   'index.html',
@@ -6,7 +6,6 @@ const ASSETS = [
   'manifest.json',
   'assets/icons/pwa/icon-192.png',
   'assets/icons/pwa/icon-512.png',
-  'asset-url.js',
   'data.js',
   'demo-data.js',
   'demo-profiles.js',
