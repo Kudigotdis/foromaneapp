@@ -108,6 +108,7 @@
     }
     .onboard-slide {
       display: none;
+      width: 100%; height: 100%; flex-shrink: 0;
       flex-direction: column; align-items: center;
       justify-content: center; padding: 40px 32px;
       text-align: center;
@@ -167,49 +168,82 @@
   </div>
 
   <script>
-    /* ─── Splash loader: preload, % progress, wait for Auth, skip ─── */
+    /* ─── Splash loader: real byte tracking via HEAD + image preload + wait for Auth ─── */
     (function(){
-      var ASSETS = [
-        { path: 'assets/icons/solid/user-circle_inactive.webp', size: 6 },
-        { path: 'assets/icons/solid/clipboard-list_inactive.webp', size: 5 },
-        { path: 'assets/icons/solid/share-nodes_whatsapp_green.webp', size: 4 },
-        { path: 'assets/icons/solid/add-to-note_orange.webp', size: 3 },
-        { path: 'assets/icons/solid/bullhorn-2_active.webp', size: 6 },
-        { path: 'assets/icons/solid/address-book-2_inactive.webp', size: 5 },
-        { path: 'assets/icons/solid/check-2_orange.webp', size: 3 },
-        { path: 'assets/icons/solid/xmark_orange.webp', size: 3 },
-        { path: 'assets/icons/solid/chevron-left_white.webp', size: 3 },
-        { path: 'assets/icons/solid/delete_icon_orange.webp', size: 4 },
-        { path: 'assets/icons/heart_active_icon.webp', size: 5 },
-        { path: 'assets/icons/heart_inactive_icon.webp', size: 5 },
-        { path: 'assets/icons/facebook_icon_on.webp', size: 4 },
-        { path: 'assets/icons/facebook_icon_f.webp', size: 3 },
-        { path: 'assets/icons/circle-flag-of-botswana.webp', size: 8 },
-        { path: 'assets/icons/search_icon.svg', size: 2 },
-        { path: 'assets/images/company_logos_dummy/foromane_logo_thumbnail.webp', size: 10 },
-        { path: 'assets/images/company_logos_dummy/foromane_logo_icon_online.png', size: 15 },
-        { path: 'assets/images/company_logos_dummy/Foromane_logo_no_background_1.png', size: 20 },
-        { path: 'assets/media/foromane_place_holder_image.webp', size: 12 },
-        { path: 'assets/logos/fnb_logo_2.png', size: 18 },
-        { path: 'assets/logos/btc_logo.png', size: 16 },
-        { path: 'assets/logos/mascom_logo.png', size: 14 },
-        { path: 'assets/logos/orange_logo.png', size: 16 },
-        { path: 'assets/logos/absa_logo.png', size: 15 },
-        { path: 'assets/logos/stanbic_logo.png', size: 14 }
-      ];
-
-      var totalBytes = ASSETS.reduce(function(s, a){ return s + a.size; }, 0);
-      var loadedBytes = 0;
-      var loadedCount = 0;
-      var totalCount = ASSETS.length;
-      var done = false;
-      var start = Date.now();
-      var MIN_MS = 1500;
-
       var splash = document.getElementById('app-splash');
       var statusEl = document.getElementById('splash-status');
       var progressEl = document.getElementById('splash-progress');
       var barFill = document.getElementById('splash-bar-fill');
+
+      /* ── All assets tracked ── */
+      var imagePaths = [
+        'assets/icons/solid/user-circle_inactive.webp',
+        'assets/icons/solid/clipboard-list_inactive.webp',
+        'assets/icons/solid/share-nodes_whatsapp_green.webp',
+        'assets/icons/solid/add-to-note_orange.webp',
+        'assets/icons/solid/bullhorn-2_active.webp',
+        'assets/icons/solid/address-book-2_inactive.webp',
+        'assets/icons/solid/check-2_orange.webp',
+        'assets/icons/solid/xmark_orange.webp',
+        'assets/icons/solid/chevron-left_white.webp',
+        'assets/icons/solid/delete_icon_orange.webp',
+        'assets/icons/heart_active_icon.webp',
+        'assets/icons/heart_inactive_icon.webp',
+        'assets/icons/facebook_icon_on.webp',
+        'assets/icons/facebook_icon_f.webp',
+        'assets/icons/circle-flag-of-botswana.webp',
+        'assets/icons/search_icon.svg',
+        'assets/images/company_logos_dummy/foromane_logo_thumbnail.webp',
+        'assets/images/company_logos_dummy/foromane_logo_icon_online.png',
+        'assets/images/company_logos_dummy/Foromane_logo_no_background_1.png',
+        'assets/media/foromane_place_holder_image.webp',
+        'assets/logos/fnb_logo_2.png',
+        'assets/logos/btc_logo.png',
+        'assets/logos/mascom_logo.png',
+        'assets/logos/orange_logo.png',
+        'assets/logos/absa_logo.png',
+        'assets/logos/stanbic_logo.png'
+      ];
+
+      var jsPaths = [
+        'asset-url.js','data.js','demo-data.js','zimbabwe_businesses.js',
+        'botswana_locations.js','zimbabwe_locations.js','demo-profiles.js',
+        'db.js','media-cache.js','cadence-engine.js','firebase-config.js',
+        'path-utils.js','mode-controller.js','ui-helpers.js',
+        'backend-logic.js','user-state.js','auth.js','utils.js',
+        'pricing-engine.js','foromane_product_categories.js',
+        'data/Country_Codes.js','data/item_brands_foromane.js',
+        'data/tradeSpecific.js','data/tradesman-skills.js',
+        'data/trade-skill-map.js','data/demo-pro-skills.js',
+        'skill-ratings.js','filter.js','navigation.js','router.js',
+        'promos.js','pro.js','pro-dashboard.js','data/seed-pro-skills.js',
+        'directory.js','notes.js','account.js','analytics.js',
+        'admin/AdminData.js','admin/AdminState.js',
+        'admin/views/ClientListTab.js','admin/views/OverviewTab.js',
+        'admin/views/ApprovalsTab.js','admin/views/FacebookCalendarTab.js',
+        'admin/views/DirectoryTab.js','admin/views/AnalyticsTab.js',
+        'admin/views/AdminManagementTab.js','admin/Admin.js','admin.js',
+        'items.js','blogs.js','app.js','staff.js','account-views.js'
+      ];
+
+      var cssPaths = [
+        'assets/fonts/fonts.css','css/styles.css','ui-styles.css'
+      ];
+
+      var allPaths = imagePaths.concat(cssPaths).concat(jsPaths);
+
+      var sizes = {};
+      var totalBytes = 0;
+      var loadedBytes = 0;
+      var headCount = 0;
+      var totalItems = allPaths.length;
+      var imageLoaded = {};
+      var loadedImages = 0;
+      var totalImages = imagePaths.length;
+      var counted = {};
+      var done = false;
+      var start = Date.now();
+      var MIN_MS = 1500;
 
       var messages = [
         { txt: 'Checking connection\u2026', at: 0.00 },
@@ -226,11 +260,17 @@
       };
       window.skipSplash = function(){ done = true; finish(); };
 
+      function formatBytes(b) {
+        var kb = b / 1024;
+        if (kb >= 1024) return (kb / 1024).toFixed(1) + ' MB';
+        return Math.round(kb) + ' KB';
+      }
+
       function updateUI(pct) {
         if (barFill) barFill.style.width = Math.round(pct * 100) + '%';
-        var loadedKb = Math.round(loadedBytes);
-        var totalKb = Math.round(totalBytes);
-        if (progressEl) progressEl.textContent = Math.round(pct * 100) + '% (' + loadedKb + ' KB / ' + totalKb + ' KB)';
+        if (progressEl) {
+          progressEl.textContent = Math.round(pct * 100) + '% (' + formatBytes(loadedBytes) + ' / ' + formatBytes(totalBytes) + ')';
+        }
         if (statusEl) {
           for (var i = messages.length - 1; i >= 0; i--) {
             if (pct >= messages[i].at) { statusEl.textContent = messages[i].txt; break; }
@@ -240,15 +280,14 @@
 
       function canFinish() {
         var elapsed = Date.now() - start;
-        var pct = totalCount > 0 ? loadedCount / totalCount : 0.5;
-        var minPassed = elapsed >= MIN_MS;
-        var scriptsReady = typeof window.Auth !== 'undefined';
-        return pct >= 1 && minPassed && scriptsReady;
+        var allSized = headCount >= totalItems;
+        var pct = totalBytes > 0 ? loadedBytes / totalBytes : (loadedImages / totalImages);
+        return allSized && pct >= 1 && elapsed >= MIN_MS && typeof window.Auth !== 'undefined';
       }
 
       function check() {
         if (done) return;
-        var pct = totalCount > 0 ? loadedCount / totalCount : 0.5;
+        var pct = totalBytes > 0 ? loadedBytes / totalBytes : (loadedImages / totalImages);
         updateUI(pct);
         if (canFinish()) finish();
       }
@@ -269,21 +308,50 @@
         }, 400);
       }
 
-      for (var i = 0; i < ASSETS.length; i++) {
-        (function(a){
+      /* ── HEAD requests for ALL assets (real Content-Length) ── */
+      allPaths.forEach(function(path){
+        fetch(path, { method: 'HEAD' }).then(function(resp){
+          var sz = parseInt(resp.headers.get('Content-Length'));
+          sizes[path] = (sz > 0) ? sz : 0;
+          totalBytes += sizes[path];
+          if (imagePaths.indexOf(path) === -1) {
+            loadedBytes += sizes[path];
+            counted[path] = true;
+          }
+        }).catch(function(){
+          sizes[path] = 0;
+        }).then(function(){
+          headCount++;
+          if (imagePaths.indexOf(path) > -1 && imageLoaded[path] && !counted[path]) {
+            loadedBytes += sizes[path];
+            counted[path] = true;
+          }
+          check();
+        });
+      });
+
+      /* ── Image preloads (browser-cached via Image element) ── */
+      imagePaths.forEach(function(path){
+        (function(p){
           var img = new Image();
           img.onload = img.onerror = function(){
-            loadedCount++;
-            loadedBytes += a.size;
+            if (imageLoaded[p]) return;
+            imageLoaded[p] = true;
+            loadedImages++;
+            if (!counted[p] && sizes[p]) {
+              loadedBytes += sizes[p];
+              counted[p] = true;
+            }
             check();
           };
-          img.src = a.path;
-        })(ASSETS[i]);
-      }
+          img.src = p;
+        })(path);
+      });
 
+      /* ── Periodic UI ticker ── */
       var ticker = setInterval(function(){
         if (done) { clearInterval(ticker); return; }
-        var pct = totalCount > 0 ? loadedCount / totalCount : 0.5;
+        var pct = totalBytes > 0 ? loadedBytes / totalBytes : (loadedImages / totalImages);
         updateUI(pct);
         if (canFinish()) finish();
       }, 200);
