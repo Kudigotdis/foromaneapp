@@ -89,6 +89,18 @@ async function importOldData(data) {
   db.close();
 }
 
+async function loadSavedData() {
+  // Restore saved session basics from localStorage if not already set
+  if (window.UserState && !window.UserState.id) {
+    var savedId = localStorage.getItem('foromane_userId');
+    var savedUsername = localStorage.getItem('foromane_username');
+    var savedRole = localStorage.getItem('foromane_role');
+    if (savedId) {
+      window.UserState.set(savedId, savedUsername || '', savedRole || '', '', '', '');
+    }
+  }
+}
+
 async function init() {
   console.log('Initializing Foromane (Construction Hub) v2.0.0...');
   migrateLegacyLocalStorage();
