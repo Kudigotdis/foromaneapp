@@ -19,8 +19,8 @@ const path = require('path');
 const fs = require('fs');
 
 const ROOT = path.resolve(__dirname, '..');
-const PROJECT_ID = 'foromane-app';
-const STORAGE_BUCKET = 'foromane-app.firebasestorage.app';
+const PROJECT_ID = 'wirog-app-93318';
+const STORAGE_BUCKET = 'wirog-app-93318.firebasestorage.app';
 const SERVICE_ACCOUNT_KEY = path.join(ROOT, 'service-account-key.json');
 
 const OPTIMIZED_DIR = path.join(ROOT, '_optimized');

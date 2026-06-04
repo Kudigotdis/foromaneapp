@@ -3,7 +3,7 @@
    Routes relative paths → Firebase Storage CDN when enabled.
    ════════════════════════════════════════════════════════ */
 
-window.__STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/foromane-app.firebasestorage.app/o/';
+window.__STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/wirog-app-93318.firebasestorage.app/o/';
 
 window.__USE_STORAGE = false; // Disabled — assets served locally from repo
 
