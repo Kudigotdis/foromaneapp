@@ -45,6 +45,12 @@ async function startProcess(cmd, args, opts = {}) {
   const url = 'http://localhost:8080';
   await page.goto(url, { waitUntil: 'networkidle2' });
 
+  // Navigate from welcome view to promo feed (init() shows welcome by default)
+  await page.evaluate(() => {
+    if (typeof enterApp === 'function') enterApp();
+    if (typeof renderPromos === 'function') renderPromos();
+  });
+
   await page.waitForFunction(() => {
     return document.querySelectorAll('#promo-feed .promo-card').length > 0;
   }, { timeout: 10000 });
