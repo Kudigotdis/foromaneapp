@@ -548,9 +548,15 @@ const Admin = {
       { id: 'client_list', title: 'Client List', icon: '👥', badge: `${this.data.getUsers().length} users · ${this.data.getBusinesses().length} businesses` },
       { id: 'overview', title: 'Overview', icon: '📊', badge: '' },
       { id: 'approvals', title: 'Approvals', icon: '✅', badge: this.data.getGlobalStats().pendingApprovals },
+      { id: 'payments', title: 'Payments', icon: '💳', badge: '' },
+      { id: 'moderation', title: 'Moderation', icon: '🚩', badge: '' },
+      { id: 'feedback', title: 'Feedback', icon: '💬', badge: '' },
       { id: 'facebook', title: 'Facebook Packaging', icon: '📅', badge: '' },
       { id: 'directory', title: 'Directory', icon: '🔍', badge: this.data.getBusinesses().length },
       { id: 'analytics', title: 'Analytics', icon: '📈', badge: '' },
+      { id: 'push_broadcast', title: 'Push Broadcast', icon: '🔔', badge: '' },
+      { id: 'audit_log', title: 'Audit Log', icon: '📋', badge: '' },
+      { id: 'error_log', title: 'Error Log', icon: '⚠️', badge: '' },
       { id: 'admin_mgmt', title: 'Admin Management', icon: '⚙️', badge: '' }
     ];
 
@@ -593,9 +599,15 @@ const Admin = {
       case 'client_list': return this.renderClientList();
       case 'overview': return this.renderOverview();
       case 'approvals': return this.renderApprovals();
+      case 'payments': return this.renderPayments();
+      case 'moderation': return this.renderModeration();
+      case 'feedback': return this.renderFeedback();
       case 'facebook': return this.renderFacebook();
       case 'directory': return this.renderDirectory();
       case 'analytics': return this.renderAnalytics();
+      case 'audit_log': return this.renderAuditLog();
+      case 'error_log': return this.renderErrorLog();
+      case 'push_broadcast': return this.renderPushBroadcast();
       case 'admin_mgmt': return this.renderAdminMgmt();
       default: return '';
     }
@@ -616,6 +628,42 @@ const Admin = {
   renderApprovals() {
     const container = document.createElement('div');
     window.ApprovalsTab.render(container);
+    return container.innerHTML;
+  },
+
+  renderModeration() {
+    const container = document.createElement('div');
+    window.ModerationTab.render(container);
+    return container.innerHTML;
+  },
+
+  renderPayments() {
+    const container = document.createElement('div');
+    window.PaymentTab.render(container);
+    return container.innerHTML;
+  },
+
+  renderFeedback() {
+    const container = document.createElement('div');
+    window.FeedbackTab.render(container);
+    return container.innerHTML;
+  },
+
+  renderAuditLog() {
+    const container = document.createElement('div');
+    window.AuditLogTab.render(container);
+    return container.innerHTML;
+  },
+
+  renderErrorLog() {
+    const container = document.createElement('div');
+    window.ErrorLogTab.render(container);
+    return container.innerHTML;
+  },
+
+  renderPushBroadcast() {
+    const container = document.createElement('div');
+    window.PushBroadcastTab.render(container);
     return container.innerHTML;
   },
 
@@ -705,8 +753,12 @@ const Admin = {
           </div>
           
           <div class="biz-card-actions">
-            <button class="biz-card-suspend">Suspend</button>
-            <button class="biz-card-ban">Ban Business</button>
+            ${biz.status === 'banned' ? `
+              <button class="btn-sm" onclick="Admin.data.reactivateUser('${biz.ownerId || ''}')" style="background:#e8f5e9;color:#2e7d32;">Reactivate Business</button>
+            ` : `
+              <button class="biz-card-suspend" onclick="Admin.suspendBusinessCard('${stats.staff && stats.staff[0] ? stats.staff[0].id : ''}')">Suspend Related</button>
+              <button class="biz-card-ban" onclick="Admin.banBusiness('${biz.id}')">Ban Business</button>
+            `}
           </div>
         </div>
       </div>
@@ -736,6 +788,12 @@ const Admin = {
     const modal = document.getElementById('user-detail-modal') || this.createUserDetailModal();
     document.body.appendChild(modal);
     
+    var status = user.status || 'active';
+    var statusBadge = status === 'active' ? '<span style="background:#e8f5e9;color:#2e7d32;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">Active</span>'
+      : status === 'suspended' ? '<span style="background:#fff3e0;color:#e65100;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">Suspended</span>'
+      : status === 'banned' ? '<span style="background:#ffebee;color:#c62828;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">Banned</span>'
+      : '';
+
     modal.innerHTML = `
       <div class="biz-card-content">
         <div class="biz-card-header">
@@ -750,8 +808,9 @@ const Admin = {
           <div class="biz-card-close" onclick="this.closest('.biz-card-modal').classList.remove('open')">✕</div>
         </div>
         <div class="biz-card-body">
-          <div style="margin-bottom:12px;">
+          <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
             <span style="background:var(--orange-light);color:var(--orange);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">${user.role || 'General User'}</span>
+            ${statusBadge}
           </div>
           
           <div class="biz-card-section">
@@ -768,6 +827,18 @@ const Admin = {
             <div class="biz-card-item"><span>Role</span><span style="text-transform:capitalize;">${assoc?.role || 'Owner'}</span></div>
           </div>
           ` : ''}
+          
+          <div class="biz-card-actions">
+            ${status === 'active' ? `
+              <button class="biz-card-suspend" onclick="Admin.suspendUser('${userId}')">Suspend</button>
+              <button class="biz-card-ban" onclick="Admin.banUser('${userId}')">Ban</button>
+            ` : status === 'suspended' ? `
+              <button class="biz-card-suspend" onclick="Admin.banUser('${userId}')" style="background:#ffebee;color:#c62828;border-color:#c62828;">Ban</button>
+              <button class="btn-sm" onclick="Admin.reactivateUser('${userId}')" style="background:#e8f5e9;color:#2e7d32;">Reactivate</button>
+            ` : status === 'banned' ? `
+              <button class="btn-sm" onclick="Admin.reactivateUser('${userId}')" style="background:#e8f5e9;color:#2e7d32;">Reactivate</button>
+            ` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -836,10 +907,10 @@ const Admin = {
       if (window.approveOnboarding) {
         showToast('Activating business in cloud...');
         await window.approveOnboarding(id);
-        // Refresh the local data
         await this.data.fetchFirestoreData();
       }
     }
+    if (window.auditLog) window.auditLog('approve_' + type, { itemId: id }).catch(function(){});
     this.render();
   },
 
@@ -889,8 +960,32 @@ const Admin = {
     else if (type === 'artwork') this.data.rejectArtwork(id, reason);
     else if (type === 'onboarding') {
        // Onboarding rejection logic: For now we just update status to rejected
-       // (Could also delete the document if needed)
     }
+    if (window.auditLog) window.auditLog('reject_' + type, { itemId: id, reason: reason }).catch(function(){});
+    this.render();
+  },
+
+  async suspendUser(userId) {
+    var reason = prompt('Reason for suspension:');
+    if (reason === null) return;
+    await this.data.suspendUser(userId, reason || 'No reason given');
+    if (window.auditLog) window.auditLog('suspend', { userId: userId, reason: reason }).catch(function(){});
+    this.render();
+  },
+
+  async banUser(userId) {
+    if (!confirm('Ban this user permanently? This action can be reversed.')) return;
+    var reason = prompt('Reason for ban:');
+    if (reason === null) return;
+    await this.data.banUser(userId, reason || 'No reason given');
+    if (window.auditLog) window.auditLog('ban', { userId: userId, reason: reason }).catch(function(){});
+    this.render();
+  },
+
+  async reactivateUser(userId) {
+    if (!confirm('Reactivate this user?')) return;
+    await this.data.reactivateUser(userId);
+    if (window.auditLog) window.auditLog('reactivate', { userId: userId }).catch(function(){});
     this.render();
   },
 
@@ -978,6 +1073,21 @@ const Admin = {
     localStorage.setItem('foromane_facebook_schedule', JSON.stringify(schedule));
     showToast(`Assigned to ${slot} ${foundDate}`);
     this.render();
+  },
+
+  async registerAdmin(userId) {
+    if (!userId) { showToast('No user ID'); return; }
+    if (typeof window.registerAdmin === 'function') {
+      try {
+        await window.registerAdmin(userId);
+        showToast('Registered as admin! Refreshing...');
+        this.render();
+      } catch (e) {
+        showToast('Error: ' + e.message);
+      }
+    } else {
+      showToast('Admin registration unavailable');
+    }
   },
 
   refresh() {

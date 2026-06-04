@@ -125,43 +125,73 @@ async function init() {
     console.error('Failed to load saved data:', err);
   }
 
-  const savedId = localStorage.getItem('foromane_userId');
-  if (savedId) {
-    const account = window.DEMO_ACCOUNTS.find(a => a.id === savedId);
-    if (account) {
-      UserState.set(account.id, account.name, account.role, '', account.town, '');
-      var assoc = window.BUSINESS_ASSOCIATIONS ? window.BUSINESS_ASSOCIATIONS[savedId] : null;
-      if (assoc) {
-        var biz = window.SAMPLE_BUSINESSES.find(function(b) { return b.id === assoc.businessId; });
-        if (biz) {
-          UserState.business = {
-            id: biz.id, name: biz.name, category: biz.category,
-            town: biz.location.split(',').pop().trim(),
-            phone: biz.phone || '', subscription: biz.subscription || 'free',
-            logo: biz.logo || '',
-            description: biz.description || '',
-            logoLandscape: biz.logoLandscape || '',
-            categories: biz.categories || [biz.category].filter(Boolean),
-            contacts: { calls: [], facebook: [], gps: [], whatsapp: [] }
-          };
-          UserState.businessRole = assoc.role;
-        }
-        UserState.kpi = { ads: 0, views: 0, likes: 0, noteAdds: 0, interactions: 0 };
-        UserState.interests = biz ? [biz.category] : [];
-      } else if (savedId === 'user-gerald') {
-        UserState.interests = ['Building Materials', 'Cement & Aggregates', 'Steel & Metal Products'];
-      } else if (savedId === 'trade') {
-        UserState.interests = ['Paint', 'Plumbing', 'Electrical'];
-      } else if (savedId === 'general') {
-        UserState.interests = ['Tiles & Flooring', 'Lighting', 'Paint'];
-      }
+  let firebaseSessionProfile = null;
+  if (typeof window.loadFirebaseUserSession === 'function') {
+    try {
+      firebaseSessionProfile = await window.loadFirebaseUserSession();
+    } catch (e) {
+      console.warn('Firebase session load failed:', e);
     }
   }
 
-  try {
-    await loadProfileFromDB();
-  } catch(err) {
-    console.error('Failed to load profile:', err);
+  if (firebaseSessionProfile) {
+    try {
+      await Auth.switchToProfile(firebaseSessionProfile);
+    } catch (e) {
+      console.warn('Failed to restore Firebase session into app state:', e);
+    }
+  } else {
+    const savedId = localStorage.getItem('foromane_userId');
+    let localProfileRestored = false;
+    if (savedId) {
+      const account = window.DEMO_ACCOUNTS.find(a => a.id === savedId);
+      if (account) {
+        UserState.set(account.id, account.name, account.role, '', account.town, '');
+        var assoc = window.BUSINESS_ASSOCIATIONS ? window.BUSINESS_ASSOCIATIONS[savedId] : null;
+        if (assoc) {
+          var biz = window.SAMPLE_BUSINESSES.find(function(b) { return b.id === assoc.businessId; });
+          if (biz) {
+            UserState.business = {
+              id: biz.id, name: biz.name, category: biz.category,
+              town: biz.location.split(',').pop().trim(),
+              phone: biz.phone || '', subscription: biz.subscription || 'free',
+              logo: biz.logo || '',
+              description: biz.description || '',
+              logoLandscape: biz.logoLandscape || '',
+              categories: biz.categories || [biz.category].filter(Boolean),
+              contacts: { calls: [], facebook: [], gps: [], whatsapp: [] }
+            };
+            UserState.businessRole = assoc.role;
+          }
+          UserState.kpi = { ads: 0, views: 0, likes: 0, noteAdds: 0, interactions: 0 };
+          UserState.interests = biz ? [biz.category] : [];
+        } else if (savedId === 'user-gerald') {
+          UserState.interests = ['Building Materials', 'Cement & Aggregates', 'Steel & Metal Products'];
+        } else if (savedId === 'trade') {
+          UserState.interests = ['Paint', 'Plumbing', 'Electrical'];
+        } else if (savedId === 'general') {
+          UserState.interests = ['Tiles & Flooring', 'Lighting', 'Paint'];
+        }
+      } else {
+        try {
+          var localProfile = await ForomaneDB.get('profiles', savedId);
+          if (localProfile) {
+            await Auth.switchToProfile(localProfile);
+            localProfileRestored = true;
+          }
+        } catch (e) {
+          console.warn('Failed to restore local profile from IndexedDB:', e);
+        }
+      }
+    }
+
+    try {
+      if (!firebaseSessionProfile && !localProfileRestored) {
+        await loadProfileFromDB();
+      }
+    } catch(err) {
+      console.error('Failed to load profile:', err);
+    }
   }
 
   try {
@@ -188,21 +218,9 @@ async function init() {
     console.warn('ForomaneMediaCache init failed (non-fatal):', err);
   }
 
-  document.getElementById('view-welcome')?.classList.add('active');
-}
-
-async function loadSavedData() {
-  if (!ForomaneDB.db) return;
-
-  try {
-    const savedItems = await ForomaneDB.getAll('items');
-    if (savedItems.length > 0) {
-      window._userItems = savedItems;
-      const promoItems = savedItems.filter(it => it.inPromo || (it.promo && it.promo.active));
-      window._promos = [...window._promos, ...promoItems];
-    }
-  } catch(e) { console.error('Failed to load items:', e); }
-
+  if (!firebaseSessionProfile) {
+    document.getElementById('view-welcome')?.classList.add('active');
+  }
   window._catalogueItems = window.DEMO_CATALOGUE_ITEMS || [];
 
   try {
@@ -281,9 +299,29 @@ function updateHeaderLogo(isOnline) {
     : 'assets/images/company_logos_dummy/foromane_logo_icon_offline.png';
 }
 
-window.addEventListener('online', () => {
+window.addEventListener('online', async () => {
   showToast('Back online');
   updateHeaderLogo(true);
+  if (typeof window.syncPendingOfflineProfiles === 'function') {
+    try {
+      var syncResult = await window.syncPendingOfflineProfiles();
+      console.log('Pending offline profiles sync result:', syncResult);
+      if (syncResult && syncResult.synced > 0) {
+        showToast(syncResult.synced + ' offline profile(s) synced to the cloud');
+      }
+      if (syncResult && syncResult.conflicts > 0) {
+        showToast(syncResult.conflicts + ' offline profile(s) have credential conflicts and require review');
+      }
+      if (syncResult && syncResult.failed.length > 0 && syncResult.conflicts === 0) {
+        showToast('Some offline profile syncs failed. Check console for details.');
+      }
+      if (typeof window.updateAccountUI === 'function') {
+        window.updateAccountUI();
+      }
+    } catch (syncError) {
+      console.warn('Pending offline profile sync failed:', syncError);
+    }
+  }
 });
 window.addEventListener('offline', () => {
   showToast('Offline - data saved locally');

@@ -11,7 +11,8 @@
     "test": "node tests/pricing_engine_test.js && node tests/foromanedb_test.js",
     "test:pricing": "node tests/pricing_engine_test.js",
     "test:foromanedb": "node tests/foromanedb_test.js",
-    "test:e2e": "node tests/e2e_puppeteer.js"
+    "test:e2e": "node tests/e2e_puppeteer.js",
+    "deploy": "firebase deploy --only firestore,hosting,functions"
   },
   "keywords": [],
   "author": "",

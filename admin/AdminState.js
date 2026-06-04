@@ -6,6 +6,7 @@ const AdminState = {
   activeSection: null,
   clientListSub: 'users',
   approvalFilter: 'all',
+  moderationFilter: 'all',
   searchQuery: '',
   alphaFilter: '',
   analyticsRange: 'this_month',
@@ -25,6 +26,11 @@ const AdminState = {
 
   setApprovalFilter(filter) {
     this.approvalFilter = filter;
+    this.render();
+  },
+
+  setModerationFilter(filter) {
+    this.moderationFilter = filter;
     this.render();
   },
 

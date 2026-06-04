@@ -458,6 +458,9 @@ function openBizProfile(bizId, name, init, color, location, phone, isPublic, des
         <span style="color:var(--orange);font-size:14px;font-weight:700;">${brandCount}</span>
       </div>
     </div>
+    <div style="text-align:center;padding:6px 0;">
+      <span style="font-size:11px;color:var(--grey-dark);cursor:pointer;" onclick="reportBusiness('${bizId}','${nameEsc}')">Report this business</span>
+    </div>
     <div class="biz-bottom-wrapper">
       <div class="biz-bottom-bar">
         <div id="biz-bar-actions">
@@ -473,6 +476,26 @@ function openBizProfile(bizId, name, init, color, location, phone, isPublic, des
   `;
 
   goTo('view-business');
+}
+
+function reportBusiness(bizId, bizName) {
+  if (window.UserState && (window.UserState.id === 'guest' || !window.UserState.id)) {
+    showToast('Please log in to report content');
+    return;
+  }
+  var reason = prompt('Why are you reporting this business? (e.g., "Scam", "Incorrect info", "Spam")');
+  if (!reason || reason.trim() === '') return;
+  var details = prompt('Any additional details? (optional)');
+  if (details === null) details = '';
+  if (typeof window.flagContent === 'function') {
+    window.flagContent('business', bizId, reason.trim(), details.trim()).then(function(result) {
+      showToast('Thank you. This business has been reported.');
+    }).catch(function(e) {
+      showToast('Report failed: ' + e.message);
+    });
+  } else {
+    showToast('Reporting is unavailable offline. Please try again when connected.');
+  }
 }
 
 function toggleBizCategories(bizId) {

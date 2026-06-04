@@ -222,7 +222,7 @@
         'admin/views/ClientListTab.js','admin/views/OverviewTab.js',
         'admin/views/ApprovalsTab.js','admin/views/FacebookCalendarTab.js',
         'admin/views/DirectoryTab.js','admin/views/AnalyticsTab.js',
-        'admin/views/AdminManagementTab.js','admin/Admin.js','admin.js',
+        'admin/views/AdminManagementTab.js','admin/views/PushBroadcastTab.js','admin/Admin.js','admin.js',
         'items.js','blogs.js','app.js','staff.js','account-views.js'
       ];
 
@@ -659,6 +659,14 @@
         <p style="font-size:12px;color:var(--grey-dark);margin-top:12px;">Create a profile to save notes, like promos, and more!</p>
       </div>
 
+      <div id="offline-sync-status-banner" style="display:none;padding:14px 16px;margin:12px 16px 0;border-radius:12px;background:#fff7ed;border:1px solid #f5d1a9;color:#7b451f;font-size:14px;line-height:1.5;">
+        <div id="offline-sync-status-text"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;">
+          <button class="btn btn-sm" id="offline-sync-status-action" style="min-width:120px;">Review status</button>
+          <button class="btn-outline btn-sm" id="offline-sync-status-secondary-action" style="min-width:120px;">Retry sync</button>
+        </div>
+      </div>
+
       <!-- Notes -->
       <div class="accordion">
         <div class="accordion-header" onclick="toggleAcc(this); renderNotesAccordion()">
@@ -742,6 +750,14 @@
               <i class="fas fa-trash-alt" style="color:var(--orange);width:20px;"></i>
               <span>Clear Cache</span>
               
+            </div>
+            <div class="settings-row" id="notifications-row" onclick="requestNotificationPermission()">
+              <i class="fas fa-bell" style="color:var(--grey-dark);width:20px;"></i>
+              <span>Enable Notifications</span>
+            </div>
+            <div class="settings-row" onclick="downloadUserData()">
+              <i class="fas fa-download" style="color:var(--grey-dark);width:20px;"></i>
+              <span>Export My Data</span>
             </div>
             <div class="settings-row" id="delete-account-row" style="color:#e74c3c;" onclick="deleteAccount()">
               <i class="fas fa-user-minus" style="color:#e74c3c;width:20px;"></i>
@@ -933,7 +949,7 @@
               <div class="sub-accordion-body" id="reg-whatsapp-entries"></div>
             </div>
             <div class="field-row" style="margin-top:4px;">
-              <input type="email" class="field-input" id="reg-email" placeholder="Email (optional)" value="">
+              <input type="email" class="field-input" id="reg-email" placeholder="Email (required for cloud login)" value="">
             </div>
           </div>
         </div>
@@ -1036,9 +1052,9 @@
       <div style="padding:16px;">
 
         <div id="login-form-fields">
-          <label for="login-username">Username</label>
-          <input type="text" id="login-username" placeholder="Enter your username" autocomplete="username">
-          <label for="login-whatsapp">WhatsApp Number</label>
+          <label for="login-username">WhatsApp or Username</label>
+          <input type="text" id="login-username" placeholder="Enter your WhatsApp number or username" autocomplete="username">
+          <label for="login-whatsapp">WhatsApp Number (required if logging in with username)</label>
           <input type="tel" id="login-whatsapp" placeholder="+267 71 234 567" autocomplete="tel">
           <label for="login-password">Password</label>
           <div style="position:relative;">
@@ -1060,7 +1076,7 @@
 
         <div id="forgot-password-section" style="display:none;">
           <p style="font-size:14px;font-weight:600;margin-bottom:4px;">Forgot Password</p>
-          <p style="font-size:12px;color:var(--grey-dark);margin-bottom:12px;">Enter your registered email and we'll retrieve your password.</p>
+          <p style="font-size:12px;color:var(--grey-dark);margin-bottom:12px;">Enter your registered email and we'll send a password reset link.</p>
           <label for="forgot-email">Email</label>
           <input type="email" id="forgot-email" placeholder="email@example.com">
           <div id="forgot-result" style="color:#c00;font-size:12px;margin-bottom:8px;display:none;"></div>
@@ -2065,6 +2081,7 @@
   <script defer src="admin/views/DirectoryTab.js"></script>
   <script defer src="admin/views/AnalyticsTab.js"></script>
   <script defer src="admin/views/AdminManagementTab.js"></script>
+  <script defer src="admin/views/PushBroadcastTab.js"></script>
   <script defer src="admin/Admin.js"></script>
   <script defer src="admin.js"></script>
   <script defer src="items.js"></script>

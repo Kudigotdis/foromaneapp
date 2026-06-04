@@ -369,6 +369,7 @@ function renderContactSection() {
     <div class="sub-accordion-body">
       ${renderMobileEntries()}
       ${renderWhatsAppEntries()}
+      ${renderWhatsAppVerificationSection()}
     </div>
   </div>`;
 }
@@ -427,6 +428,62 @@ function renderWhatsAppEntries() {
   });
   html += `<button class="add-entry-btn" onclick="addWhatsAppEntry()"><i class="fas fa-plus"></i> Add WhatsApp Number</button></div></div>`;
   return html;
+}
+
+function getPrimaryWhatsAppNumber() {
+  var was = UserState.contacts.whatsapps || [];
+  var primary = was.find(function(w) { return w.isPrimary; }) || was[0];
+  if (!primary || !primary.countryCode || !primary.number) return '';
+  return (primary.countryCode + primary.number).trim();
+}
+
+function renderWhatsAppVerificationSection() {
+  var phone = getPrimaryWhatsAppNumber();
+  if (!phone) {
+    return `<div style="padding:12px 0 0;font-size:13px;color:var(--grey-dark);">Add a WhatsApp number to enable WhatsApp sharing features.</div>`;
+  }
+  if (UserState.isVerified) {
+    return `<div style="padding:12px 0 0;border-top:1px solid #f3f4f6;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:18px;color:#16a34a;">✔</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#111;">WhatsApp Connected</div>
+          <div style="font-size:12px;color:var(--grey-dark);">Your primary WhatsApp number is linked to your profile.</div>
+        </div>
+      </div>
+    </div>`;
+  }
+  return `<div style="padding:12px 0 0;border-top:1px solid #f3f4f6;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:18px;color:var(--orange);">📱</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#111;">WhatsApp Connected</div>
+          <div style="font-size:12px;color:var(--grey-dark);">${phone.replace(/</g,'&lt;')}</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;padding-top:10px;border-top:1px solid #f3f4f6;">
+        <button class="btn-outline btn-sm" onclick="window.open('https://wa.me/26771829765','_blank')">
+          <i class="fab fa-whatsapp"></i> Contact Foromane
+        </button>
+      </div>
+    </div>`;
+}
+
+function markUserAsVerified() {
+  UserState.setVerified(true);
+  if (window.ForomaneDB && window.ForomaneDB.db && UserState.id && UserState.id !== 'guest') {
+    window.ForomaneDB.get('profiles', UserState.id).then(function(profile) {
+      if (!profile) return;
+      profile.verified = true;
+      profile.verificationStatus = 'verified';
+      window.ForomaneDB.put('profiles', profile).catch(function(err) { console.warn('Failed to persist local verification:', err); });
+    }).catch(function(err) { console.warn('Failed to load profile for verification update:', err); });
+  }
+  if (typeof window.updateFirebaseUserVerification === 'function' && UserState.id && UserState.id !== 'guest') {
+    window.updateFirebaseUserVerification(UserState.id, true).catch(function(err) {
+      console.warn('Failed to update remote verification status:', err);
+    });
+  }
 }
 
 function renderCategoriesSection() {
@@ -1802,7 +1859,10 @@ function updateAccountHero() {
   }
 
   document.getElementById('acct-name').textContent = name;
-  const role = isAdmin ? 'Administrator' : s.role;
+  var role = isAdmin ? 'Administrator' : s.role;
+  if (!isGuest && s.isVerified) {
+    role += ' · Verified';
+  }
   document.getElementById('acct-role').textContent = role;
   const noteCount = (window._notes || []).filter(function(n) { return n.userId === s.id; }).length;
   const el = document.getElementById('pro-notes-count');
@@ -1916,9 +1976,172 @@ function openSwitcher() {
 
   // 8. Logout
   html += '<div class="switcher-other-btn" onclick="event.stopPropagation();logoutUser();" style="margin-top:4px;color:#c00;">Logout</div>';
+  html += '<div class="switcher-other-btn" onclick="event.stopPropagation();closeSwitcher();openFeedbackModal();" style="margin-top:2px;font-size:12px;color:var(--grey-dark);">Send Feedback</div>';
+  html += '<div class="switcher-other-btn" onclick="event.stopPropagation();closeSwitcher();openLegalModal(\'terms\');" style="margin-top:2px;font-size:12px;color:var(--grey-dark);">Terms of Service</div>';
+  html += '<div class="switcher-other-btn" onclick="event.stopPropagation();closeSwitcher();openLegalModal(\'privacy\');" style="margin-top:2px;font-size:12px;color:var(--grey-dark);">Privacy Policy</div>';
 
   list.innerHTML = html;
   openModal('switcher-modal');
+}
+
+function openFeedbackModal() {
+  var existing = document.getElementById('feedback-modal');
+  if (existing) { openModal('feedback-modal'); return; }
+  var modal = document.createElement('div');
+  modal.id = 'feedback-modal';
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width:380px;">
+      <div class="modal-header">
+        <h3>Send Feedback</h3>
+        <i class="fas fa-times" onclick="closeModal('feedback-modal')"></i>
+      </div>
+      <div class="modal-body">
+        <select id="fb-category" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+          <option value="feedback">Feedback</option>
+          <option value="bug">Bug Report</option>
+          <option value="feature">Feature Request</option>
+          <option value="other">Other</option>
+        </select>
+        <textarea id="fb-message" placeholder="Tell us what's on your mind..." style="width:100%;min-height:100px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;resize:vertical;"></textarea>
+        <input id="fb-contact" type="text" placeholder="Your email or WhatsApp (optional)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+        <div id="fb-error" style="color:#c62828;font-size:12px;display:none;margin-bottom:8px;"></div>
+        <button class="btn" onclick="sendFeedback()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:12px;border-radius:8px;font-weight:600;">Submit</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  openModal('feedback-modal');
+}
+
+// ==========================================
+// LEGAL MODALS (Terms of Service & Privacy Policy)
+// ==========================================
+
+function openLegalModal(type) {
+  var modalId = type === 'privacy' ? 'privacy-modal' : 'terms-modal';
+  var existing = document.getElementById(modalId);
+  if (existing) { openModal(modalId); return; }
+  var modal = document.createElement('div');
+  modal.id = modalId;
+  modal.className = 'modal';
+  var content = type === 'privacy' ? `
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <h3>Privacy Policy</h3>
+        <i class="fas fa-times" onclick="closeModal('${modalId}')"></i>
+      </div>
+      <div class="modal-body" style="max-height:70vh;overflow-y:auto;font-size:13px;line-height:1.6;color:#333;">
+        <p><strong>Last updated:</strong> June 2026</p>
+        <p>Foromane (&ldquo;we&rdquo;, &ldquo;our&rdquo;, &ldquo;us&rdquo;) respects your privacy. This policy explains how we collect, use, and protect your personal information.</p>
+        <h4>1. Information We Collect</h4>
+        <p>We collect information you provide directly: name, email, phone number, WhatsApp number, location, business details, and profile photos. We also collect usage data such as promo views, likes, and interactions.</p>
+        <h4>2. How We Use Your Information</h4>
+        <p>We use your information to operate the Foromane platform, process promo requests, verify your identity via WhatsApp, and improve our services. Your business listing is visible to other users as part of the directory.</p>
+        <h4>3. Data Storage</h4>
+        <p>Your data is stored securely using Firebase (Google Cloud) and locally on your device via IndexedDB. We retain your data for as long as your account is active.</p>
+        <h4>4. Data Sharing</h4>
+        <p>We do not sell your personal data. Business information you choose to list is shared publicly within the Foromane directory. We may share data with service providers (Firebase, Google Cloud) necessary to operate the platform.</p>
+        <h4>5. Your Rights</h4>
+        <p>You can request a copy of your data via the &ldquo;Export My Data&rdquo; feature in your account settings. You may delete your account by contacting us on WhatsApp at +267 71829765.</p>
+        <h4>6. Contact</h4>
+        <p>For privacy concerns, WhatsApp +267 71829765 or email foromane@gmail.com</p>
+      </div>
+    </div>
+  ` : `
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <h3>Terms of Service</h3>
+        <i class="fas fa-times" onclick="closeModal('${modalId}')"></i>
+      </div>
+      <div class="modal-body" style="max-height:70vh;overflow-y:auto;font-size:13px;line-height:1.6;color:#333;">
+        <p><strong>Last updated:</strong> June 2026</p>
+        <p>By using Foromane, you agree to these terms. If you do not agree, do not use the platform.</p>
+        <h4>1. Account Registration</h4>
+        <p>You must provide accurate information when creating an account. You are responsible for maintaining the confidentiality of your login credentials.</p>
+        <h4>2. User Conduct</h4>
+        <p>You agree not to use Foromane for unlawful purposes, to harass others, to post false or misleading information, or to engage in any activity that disrupts the platform.</p>
+        <h4>3. Business Listings</h4>
+        <p>Business owners are responsible for the accuracy of their listings. Foromane reserves the right to remove or suspend listings that violate our policies.</p>
+        <h4>4. Promotions & Payments</h4>
+        <p>Promo requests are subject to approval. Payment proof must be submitted for paid promotions. Refunds are handled on a case-by-case basis.</p>
+        <h4>5. Intellectual Property</h4>
+        <p>Content you submit (logos, images, descriptions) remains yours. You grant Foromane a license to display this content on the platform.</p>
+        <h4>6. Limitation of Liability</h4>
+        <p>Foromane is provided &ldquo;as is&rdquo; without warranties. We are not liable for damages arising from your use of the platform.</p>
+        <h4>7. Changes</h4>
+        <p>We may update these terms at any time. Continued use after changes constitutes acceptance.</p>
+      </div>
+    </div>
+  `;
+  modal.innerHTML = content;
+  document.body.appendChild(modal);
+  openModal(modalId);
+}
+
+// ==========================================
+// PUSH NOTIFICATIONS
+// ==========================================
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) { console.warn('Notifications not supported'); return false; }
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') { showToast('Notifications were blocked. Update your browser settings to enable them.'); return false; }
+  var permission = await Notification.requestPermission();
+  if (permission === 'granted') {
+    showToast('Notifications enabled');
+    return true;
+  }
+  return false;
+}
+
+function showLocalNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, { body: body, icon: '/assets/icons/icon-192.png' });
+  } catch (e) { console.warn('Notification failed:', e); }
+}
+
+// Register service worker for push notifications
+if ('serviceWorker' in navigator && !window._swRegistered) {
+  window._swRegistered = true;
+  navigator.serviceWorker.register('/sw.js').catch(function(e) {
+    console.warn('Service worker registration failed:', e);
+  });
+}
+
+window.openLegalModal = openLegalModal;
+window.requestNotificationPermission = requestNotificationPermission;
+window.showLocalNotification = showLocalNotification;
+
+async function sendFeedback() {
+  var category = document.getElementById('fb-category').value;
+  var message = document.getElementById('fb-message').value.trim();
+  var contactInfo = document.getElementById('fb-contact').value.trim();
+  var errorEl = document.getElementById('fb-error');
+  if (!message || message.length < 3) {
+    errorEl.textContent = 'Please write a message (at least 3 characters).';
+    errorEl.style.display = 'block';
+    return;
+  }
+  errorEl.style.display = 'none';
+  if (typeof window.submitFeedback === 'function') {
+    try {
+      await window.submitFeedback(category, message, contactInfo);
+      closeModal('feedback-modal');
+      showToast('Feedback submitted! Thank you.');
+    } catch (e) {
+      errorEl.textContent = e.message || 'Failed to submit feedback.';
+      errorEl.style.display = 'block';
+    }
+  } else {
+    // Offline fallback: store locally
+    var feedback = JSON.parse(localStorage.getItem('foromane_feedback') || '[]');
+    feedback.push({ category: category, message: message, contactInfo: contactInfo, timestamp: Date.now(), userId: UserState.id, userName: UserState.name, status: 'pending' });
+    localStorage.setItem('foromane_feedback', JSON.stringify(feedback));
+    closeModal('feedback-modal');
+    showToast('Feedback saved locally. It will sync when online.');
+  }
 }
 
 function closeSwitcher() { closeModal('switcher-modal'); }
@@ -2666,6 +2889,7 @@ function renderAccount() {
 
 function updateAccountUI() {
   updateAccountHero();
+  renderOfflineSyncStatusBanner();
   const isGuest = UserState.id === 'guest';
   const isAdmin = UserState.role === 'Administrator';
   const guestCta = document.getElementById('guest-cta');
@@ -2730,6 +2954,162 @@ function resetBusinessCard() {
     '<button class="btn btn-sm" onclick="openCreateBiz()" style="margin-bottom:6px;width:100%;">+ List Business</button>' +
     '<button class="btn-outline btn-sm" onclick="openCreateProProfile()" style="width:100%;margin-bottom:4px;"><i class="fas fa-user-tie"></i> List as Pro</button>' +
     '<button class="btn-outline btn-sm" onclick="openJoinBusiness()" style="width:100%;"><i class="fas fa-user-plus"></i> Join Business</button>';
+}
+
+function renderOfflineSyncStatusBanner() {
+  var banner = document.getElementById('offline-sync-status-banner');
+  var text = document.getElementById('offline-sync-status-text');
+  var action = document.getElementById('offline-sync-status-action');
+  var secondary = document.getElementById('offline-sync-status-secondary-action');
+  if (!banner || !text || !action || !secondary) return;
+
+  if (UserState.syncStatus === 'pending') {
+    banner.style.display = '';
+    text.innerHTML = 'Your profile is saved locally and will sync automatically when online. Review status or retry sync manually if needed.';
+    action.textContent = 'Review status';
+    secondary.textContent = 'Retry sync';
+    action.onclick = openOfflineSyncReview;
+    secondary.onclick = retryOfflineSync;
+    return;
+  }
+
+  if (UserState.syncStatus === 'conflict') {
+    banner.style.display = '';
+    text.innerHTML = 'This profile has a credential conflict and requires review before it can sync to the cloud.';
+    action.textContent = 'Review conflict';
+    secondary.textContent = 'Retry sync';
+    action.onclick = openOfflineSyncReview;
+    secondary.onclick = retryOfflineSync;
+    return;
+  }
+
+  banner.style.display = 'none';
+}
+
+function openOfflineSyncReview() {
+  var titleEl = document.getElementById('generic-modal-title');
+  var bodyEl = document.getElementById('generic-modal-body');
+  if (!titleEl || !bodyEl) return;
+
+  var status = UserState.syncStatus;
+  var html = '<div style="display:flex;flex-direction:column;gap:14px;">';
+
+  if (status === 'pending') {
+    titleEl.textContent = 'Offline Sync Pending';
+    html += '<p>Your profile is currently stored locally and will be synced when the app detects an online connection.</p>';
+    html += '<p><strong>Profile:</strong> ' + escapeHtml(UserState.name || UserState.id || 'Unknown') + '</p>';
+    html += '<p><strong>State:</strong> Pending upload</p>';
+  } else if (status === 'conflict') {
+    titleEl.textContent = 'Offline Sync Conflict';
+    html += '<p>There is a conflict with your offline profile credentials. Review the details below before retrying sync.</p>';
+    if (UserState.conflictType) {
+      html += '<p><strong>Conflict type:</strong> ' + escapeHtml(UserState.conflictType) + '</p>';
+    }
+    if (UserState.conflictValue) {
+      html += '<p><strong>Conflict value:</strong> ' + escapeHtml(UserState.conflictValue) + '</p>';
+    }
+    if (UserState.conflictExistingProfileId) {
+      html += '<p><strong>Existing account:</strong> ' + escapeHtml(UserState.conflictExistingProfileId) + '</p>';
+    }
+    if (UserState.syncError) {
+      html += '<p><strong>Last error:</strong> ' + escapeHtml(UserState.syncError) + '</p>';
+    }
+    if (UserState.conflictType) {
+      var conflictLabel = UserState.conflictType === 'phone' ? 'mobile number' :
+                          UserState.conflictType === 'whatsapp' ? 'WhatsApp number' :
+                          UserState.conflictType;
+      var inputType = (UserState.conflictType === 'phone' || UserState.conflictType === 'whatsapp') ? 'tel' : 'text';
+      html += '<div style="display:flex;flex-direction:column;gap:8px;">' +
+              '<label for="offline-conflict-value">New ' + escapeHtml(conflictLabel) + '</label>' +
+              '<input id="offline-conflict-value" type="' + inputType + '" value="' + escapeHtml(UserState.conflictValue || '') + '" placeholder="Enter a different ' + escapeHtml(conflictLabel) + '" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:4px;">' +
+              '<small style="color:#666;line-height:1.4;">Use a different value that is not already registered.</small>' +
+              '</div>';
+    }
+  } else {
+    titleEl.textContent = 'Offline Sync Status';
+    html += '<p>No pending offline profile sync is currently active.</p>';
+  }
+
+  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">';
+  if (status === 'conflict') {
+    html += '<button class="btn" onclick="resolveOfflineConflict();">Resolve conflict</button>';
+  }
+  html += '<button class="btn" onclick="retryOfflineSync();">Retry Sync</button>';
+  if (status === 'conflict') {
+    html += '<button class="btn-outline" onclick="discardOfflineSyncProfile();">Discard Local Profile</button>';
+  }
+  html += '<button class="btn-outline" onclick="closeModal(\'generic-modal\');">Close</button>';
+  html += '</div>';
+  html += '</div>';
+
+  bodyEl.innerHTML = html;
+  openModal('generic-modal');
+}
+
+async function retryOfflineSync() {
+  try {
+    if (typeof window.syncPendingOfflineProfiles !== 'function') {
+      throw new Error('Offline sync helper unavailable');
+    }
+    var result = await window.syncPendingOfflineProfiles();
+    if (result && result.synced > 0) {
+      showToast(result.synced + ' profile(s) synced successfully');
+      closeModal('generic-modal');
+    }
+    if (result && result.conflicts > 0) {
+      showToast(result.conflicts + ' profile(s) still require review');
+    }
+    if (typeof window.refreshCurrentOfflineProfileState === 'function') {
+      await window.refreshCurrentOfflineProfileState();
+    }
+    updateAccountUI();
+  } catch (err) {
+    console.warn('Retry offline sync failed:', err);
+    showToast('Retry failed. Check console for details.');
+  }
+}
+
+async function resolveOfflineConflict() {
+  try {
+    if (typeof window.updateOfflineProfileCredential !== 'function') {
+      throw new Error('Conflict resolution helper unavailable');
+    }
+    var type = UserState.conflictType;
+    var input = document.getElementById('offline-conflict-value');
+    if (!input) {
+      throw new Error('Conflict value input not found.');
+    }
+    var newValue = input.value.trim();
+    if (!newValue) {
+      showToast('Enter a new ' + type + ' to resolve the conflict.');
+      return;
+    }
+    await window.updateOfflineProfileCredential(UserState.id, type, newValue);
+    if (typeof window.refreshCurrentOfflineProfileState === 'function') {
+      await window.refreshCurrentOfflineProfileState();
+    }
+    updateAccountUI();
+    showToast('Conflict updated. Retry sync now.');
+    openOfflineSyncReview();
+  } catch (err) {
+    console.warn('Resolve offline conflict failed:', err);
+    showToast(err.message || 'Could not resolve conflict');
+  }
+}
+
+async function discardOfflineSyncProfile() {
+  try {
+    if (typeof window.discardPendingOfflineProfile !== 'function') {
+      throw new Error('Discard helper unavailable');
+    }
+    await window.discardPendingOfflineProfile(UserState.id);
+    showToast('Local offline profile discarded');
+    UserState.clear();
+    location.reload();
+  } catch (err) {
+    console.warn('Failed to discard offline profile:', err);
+    showToast('Could not discard offline profile');
+  }
 }
 
 async function updateKPI() {
@@ -3419,6 +3799,7 @@ window.addWhatsAppEntry = addWhatsAppEntry;
 window.removeWhatsAppEntry = removeWhatsAppEntry;
 window.setPrimaryWhatsApp = setPrimaryWhatsApp;
 window.updateWhatsAppField = updateWhatsAppField;
+window.markUserAsVerified = markUserAsVerified;
 window.removeFavourite = removeFavourite;
 window.toggleInterestCheckbox = toggleInterestCheckbox;
 window.toggleAllInterests = toggleAllInterests;
@@ -3863,4 +4244,5 @@ window.renderAgentPortal = renderAgentPortal;
 window.agentVerifyUser = agentVerifyUser;
 window.triggerPlatformSync = triggerPlatformSync;
 window.closeLikedAccordion = closeLikedAccordion;
+
 

@@ -23,6 +23,7 @@ const UserState = {
   firstName: localStorage.getItem("foromane_firstName") || "",
   surname: localStorage.getItem("foromane_surname") || "",
   role: localStorage.getItem("foromane_role") || "General User",
+  status: localStorage.getItem("foromane_status") || 'active',
   isVerified: localStorage.getItem("foromane_isVerified") === 'true', // New: VIP/Agent Verification
   company: localStorage.getItem("foromane_company") || "",
   town: localStorage.getItem("foromane_town") || "Gaborone",
@@ -53,6 +54,7 @@ const UserState = {
 
   set(id, name, role, company = "", town = "", mobile = "") {
     this.id = id;
+    if (this.status) localStorage.setItem("foromane_status", this.status);
     this.name = name;
     const parts = name.split(' ');
     this.firstName = parts[0] || '';
@@ -77,6 +79,7 @@ const UserState = {
     localStorage.setItem("foromane_gender", this.gender);
     localStorage.setItem("foromane_nationality", this.nationality);
     localStorage.setItem("foromane_race", this.race);
+    localStorage.setItem("foromane_isVerified", this.isVerified ? 'true' : 'false');
     if (this.photo) localStorage.setItem("foromane_photo", this.photo);
     this._persistContacts();
     this._persistLocation();
@@ -85,13 +88,19 @@ const UserState = {
     checkPromoWeekReset();
   },
 
+  setVerified(flag) {
+    this.isVerified = !!flag;
+    localStorage.setItem("foromane_isVerified", this.isVerified ? 'true' : 'false');
+  },
+
   clear() {
-    ["foromane_userId","foromane_name","foromane_firstName","foromane_surname","foromane_role","foromane_company","foromane_town","foromane_mobile","foromane_username","foromane_dob","foromane_gender","foromane_nationality","foromane_race","foromane_contacts","foromane_location","foromane_interests","foromane_favSuppliers","foromane_photo","foromane_professional_"+this.id].forEach(k => localStorage.removeItem(k));
+    ["foromane_userId","foromane_name","foromane_firstName","foromane_surname","foromane_role","foromane_company","foromane_town","foromane_mobile","foromane_username","foromane_dob","foromane_gender","foromane_nationality","foromane_race","foromane_isVerified","foromane_status","foromane_contacts","foromane_location","foromane_interests","foromane_favSuppliers","foromane_photo","foromane_professional_"+this.id].forEach(k => localStorage.removeItem(k));
     this.id = 'guest';
     this.name = "Guest User";
     this.firstName = "";
     this.surname = "";
     this.role = "General User";
+    this.isVerified = false;
     this.company = "";
     this.town = "Gaborone";
     this.mobile = "";

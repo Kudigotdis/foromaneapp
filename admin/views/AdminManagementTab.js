@@ -13,6 +13,14 @@ const AdminManagementTab = {
       <div class="admin-list">
         ${admins.map(a => this.renderAdminRow(a, isSuperAdmin)).join('')}
       </div>
+      ${admins.length === 0 && window.UserState && window.UserState.id !== 'guest' ? `
+        <div style="margin-top:16px;padding:12px;background:#fff3e0;border-radius:8px;text-align:center;">
+          <p style="font-size:13px;margin-bottom:8px;">No admins configured in Firestore yet.</p>
+          <button class="btn" onclick="Admin.registerAdmin('${window.UserState.id}')" style="background:var(--orange);color:#fff;border:none;">
+            <i class="fas fa-shield-alt"></i> Register as First Admin
+          </button>
+        </div>
+      ` : ''}
       ${isSuperAdmin ? `
         <div style="margin-top:16px;">
           <button class="btn" onclick="Admin.showAddAdminModal()">

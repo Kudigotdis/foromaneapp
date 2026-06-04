@@ -4,9 +4,24 @@
 
 class AdminData {
   constructor() {
+    this._fs = null;
     this.refresh();
     var self = this;
     setTimeout(function() { self.runMaintenance(); }, 0);
+  }
+
+  async _getFirestore() {
+    if (this._fs) return this._fs;
+    if (window._ensureFirebase) {
+      try {
+        var fb = await window._ensureFirebase();
+        if (fb && fb.firestore) {
+          this._fs = fb;
+          return fb;
+        }
+      } catch (e) { /* fallback to localStorage */ }
+    }
+    return null;
   }
 
   refresh() {
@@ -30,24 +45,128 @@ class AdminData {
     }
 
     this.admins = JSON.parse(localStorage.getItem('foromane_admins') || '["admin"]');
-    this.pendingBusinesses = []; // New: To be filled from Firestore
+    this.pendingBusinesses = [];
   }
 
   async fetchFirestoreData() {
     try {
-      // Accessing Firebase from window (initialized in backend-logic.js)
-      if (!window.firebase || !window.firebase.getFirestore) {
-         // Fallback: If modules aren't fully exposed, we might need a direct import
-         // But for now let's assume standard access to the businesses collection
-         console.warn("Firestore access in AdminData pending exposure");
+      var fb = await this._getFirestore();
+      if (!fb) {
+        // Fallback to localStorage-loadable data
+        if (window.fetchPendingOnboarding) {
+          this.pendingBusinesses = await window.fetchPendingOnboarding();
+        }
+        return;
       }
-      
-      // I will implement a global fetcher in backend-logic to help AdminData
+      var db = fb.firestore;
+
+      // Fetch pending onboarding requests
       if (window.fetchPendingOnboarding) {
-        this.pendingBusinesses = await window.fetchPendingOnboarding();
+        try {
+          this.pendingBusinesses = await window.fetchPendingOnboarding();
+        } catch (e) { console.warn('Failed to fetch pending onboarding:', e); }
+      }
+
+      // Fetch promo_requests from Firestore
+      try {
+        var prCol = db.collection(fb.db, 'promo_requests');
+        var prSnap = await db.getDocs(db.query(prCol, db.orderBy('createdAt', 'desc')));
+        var prMap = {};
+        prSnap.forEach(function(doc) {
+          var data = Object.assign({ id: doc.id }, doc.data());
+          var lsIdx = this.promoRequests.findIndex(function(r) { return r.id === doc.id || r._fsId === doc.id; });
+          if (lsIdx === -1) this.promoRequests.push(data);
+          else this.promoRequests[lsIdx] = Object.assign({}, this.promoRequests[lsIdx], data);
+          prMap[doc.id] = true;
+        }.bind(this));
+        // Persist merged data back to localStorage for offline
+        localStorage.setItem('foromane_promo_requests', JSON.stringify(this.promoRequests));
+      } catch (e) { console.warn('Failed to fetch promo_requests from Firestore:', e); }
+
+      // Fetch payment_requests from Firestore
+      try {
+        var payCol = db.collection(fb.db, 'payment_requests');
+        var paySnap = await db.getDocs(db.query(payCol, db.orderBy('createdAt', 'desc')));
+        paySnap.forEach(function(doc) {
+          var data = Object.assign({ id: doc.id }, doc.data());
+          var lsIdx = this.paymentRequests.findIndex(function(r) { return r.id === doc.id || r._fsId === doc.id; });
+          if (lsIdx === -1) this.paymentRequests.push(data);
+          else this.paymentRequests[lsIdx] = Object.assign({}, this.paymentRequests[lsIdx], data);
+        }.bind(this));
+        localStorage.setItem('foromane_payment_requests', JSON.stringify(this.paymentRequests));
+      } catch (e) { console.warn('Failed to fetch payment_requests from Firestore:', e); }
+
+      // Fetch artwork_submissions from Firestore
+      try {
+        var artCol = db.collection(fb.db, 'artwork_submissions');
+        var artSnap = await db.getDocs(db.query(artCol, db.orderBy('createdAt', 'desc')));
+        artSnap.forEach(function(doc) {
+          var data = Object.assign({ id: doc.id }, doc.data());
+          var lsIdx = this.artworkSubmissions.findIndex(function(r) { return r.id === doc.id || r._fsId === doc.id; });
+          if (lsIdx === -1) this.artworkSubmissions.push(data);
+          else this.artworkSubmissions[lsIdx] = Object.assign({}, this.artworkSubmissions[lsIdx], data);
+        }.bind(this));
+        localStorage.setItem('foromane_artwork_submissions', JSON.stringify(this.artworkSubmissions));
+      } catch (e) { console.warn('Failed to fetch artwork_submissions from Firestore:', e); }
+
+      // Fetch businesses from Firestore (public read allowed)
+      try {
+        var bizCol = db.collection(fb.db, 'businesses');
+        var bizSnap = await db.getDocs(db.query(bizCol, db.limit(500)));
+        bizSnap.forEach(function(doc) {
+          var data = Object.assign({ id: doc.id }, doc.data());
+          var existing = this.businessMap[doc.id];
+          if (existing) Object.assign(existing, data);
+          else {
+            this.businesses.push(data);
+            this.businessMap[doc.id] = data;
+          }
+        }.bind(this));
+      } catch (e) { console.warn('Failed to fetch businesses from Firestore:', e); }
+
+      // Fetch profiles from Firestore (admin access)
+      try {
+        var profCol = db.collection(fb.db, 'profiles');
+        var profSnap = await db.getDocs(db.query(profCol, db.limit(500)));
+        profSnap.forEach(function(doc) {
+          var data = Object.assign({ id: doc.id }, doc.data());
+          var existing = this.userMap[doc.id];
+          if (existing) Object.assign(existing, data);
+          else {
+            this.profiles.push(data);
+            this.userMap[doc.id] = data;
+          }
+        }.bind(this));
+      } catch (e) { console.warn('Failed to fetch profiles from Firestore:', e); }
+
+      // Refresh admin list from Firestore
+      if (window.refreshAdminList) {
+        try {
+          this.admins = await window.refreshAdminList();
+        } catch (e) { console.warn('Failed to refresh admin list:', e); }
       }
     } catch (e) {
-      console.error("Failed to fetch Firestore data for Admin:", e);
+      console.error('Failed to fetch Firestore data for Admin:', e);
+      // Fallback: try local methods
+      if (window.fetchPendingOnboarding) {
+        try { this.pendingBusinesses = await window.fetchPendingOnboarding(); } catch (e2) {}
+      }
+    }
+  }
+
+  async _writeToFirestore(collection, docId, data) {
+    try {
+      var fb = await this._getFirestore();
+      if (!fb) return false;
+      data._fsSyncedAt = Date.now();
+      var docRef = docId
+        ? fb.firestore.doc(fb.db, collection, docId)
+        : fb.firestore.doc(fb.db, collection, data.id || data._localId);
+      await fb.firestore.setDoc(docRef, data, { merge: true });
+      return true;
+    } catch (e) {
+      console.warn('Failed to write to Firestore collection ' + collection + ':', e);
+      return false;
     }
   }
 
@@ -232,6 +351,57 @@ class AdminData {
     return this.profiles.filter(p => p.role === 'Pro' || p.role === 'Professional');
   }
 
+  // === USER STATUS MANAGEMENT ===
+  async suspendUser(userId, reason) {
+    if (window.suspendUser) {
+      try {
+        var result = await window.suspendUser(userId, reason);
+        showToast('User suspended');
+        return result;
+      } catch (e) {
+        showToast('Error: ' + e.message);
+        return null;
+      }
+    }
+    showToast('Backend unavailable');
+    return null;
+  }
+
+  async banUser(userId, reason) {
+    if (window.banUser) {
+      try {
+        var result = await window.banUser(userId, reason);
+        showToast('User banned');
+        return result;
+      } catch (e) {
+        showToast('Error: ' + e.message);
+        return null;
+      }
+    }
+    showToast('Backend unavailable');
+    return null;
+  }
+
+  async reactivateUser(userId) {
+    if (window.reactivateUser) {
+      try {
+        var result = await window.reactivateUser(userId);
+        showToast('User reactivated');
+        return result;
+      } catch (e) {
+        showToast('Error: ' + e.message);
+        return null;
+      }
+    }
+    showToast('Backend unavailable');
+    return null;
+  }
+
+  getUserStatus(userId) {
+    var user = this.userMap[userId];
+    return (user && user.status) || 'active';
+  }
+
   // === ADMIN MANAGEMENT ===
   getAdmins() {
     return this.admins.map(id => this.userMap[id]).filter(Boolean).map(u => ({
@@ -240,10 +410,11 @@ class AdminData {
     }));
   }
 
-  addAdmin(userId) {
+  async addAdmin(userId) {
     if (!this.admins.includes(userId)) {
       this.admins.push(userId);
       localStorage.setItem('foromane_admins', JSON.stringify(this.admins));
+      await this._writeToFirestore('admins', userId, { role: 'admin', addedAt: Date.now() });
       
       const profile = this.userMap[userId];
       if (profile) profile.role = 'Administrator';
@@ -251,10 +422,18 @@ class AdminData {
     this.refresh();
   }
 
-  removeAdmin(userId) {
+  async removeAdmin(userId) {
     if (userId === 'admin') return false;
     this.admins = this.admins.filter(id => id !== userId);
     localStorage.setItem('foromane_admins', JSON.stringify(this.admins));
+    
+    // Remove from Firestore admins collection
+    try {
+      var fb = await this._getFirestore();
+      if (fb) {
+        await fb.firestore.deleteDoc(fb.firestore.doc(fb.db, 'admins', userId));
+      }
+    } catch (e) { console.warn('Failed to remove admin from Firestore:', e); }
     
     const profile = this.userMap[userId];
     if (profile) profile.role = 'General User';
@@ -305,13 +484,14 @@ class AdminData {
     return result;
   }
 
-  // === APPROVAL ACTIONS ===
+  // === APPROVAL ACTIONS (localStorage + Firestore dual-write) ===
   approvePromoRequest(id) {
     const idx = this.promoRequests.findIndex(r => r.id === id);
     if (idx > -1) {
       this.promoRequests[idx].status = 'approved';
       this.promoRequests[idx].reviewedAt = Date.now();
       localStorage.setItem('foromane_promo_requests', JSON.stringify(this.promoRequests));
+      this._writeToFirestore('promo_requests', id, this.promoRequests[idx]);
       this.refresh();
       return true;
     }
@@ -325,6 +505,7 @@ class AdminData {
       this.promoRequests[idx].reason = reason;
       this.promoRequests[idx].reviewedAt = Date.now();
       localStorage.setItem('foromane_promo_requests', JSON.stringify(this.promoRequests));
+      this._writeToFirestore('promo_requests', id, this.promoRequests[idx]);
       this.refresh();
       return true;
     }
@@ -337,6 +518,7 @@ class AdminData {
       this.paymentRequests[idx].status = 'approved';
       this.paymentRequests[idx].reviewedAt = Date.now();
       localStorage.setItem('foromane_payment_requests', JSON.stringify(this.paymentRequests));
+      this._writeToFirestore('payment_requests', id, this.paymentRequests[idx]);
       this.refresh();
       return true;
     }
@@ -350,13 +532,14 @@ class AdminData {
       this.paymentRequests[idx].reason = reason;
       this.paymentRequests[idx].reviewedAt = Date.now();
       localStorage.setItem('foromane_payment_requests', JSON.stringify(this.paymentRequests));
+      this._writeToFirestore('payment_requests', id, this.paymentRequests[idx]);
       this.refresh();
       return true;
     }
     return false;
   }
 
-  /* legacy: approve whole submission by setting status */
+  /* approve whole submission by setting status */
   approveArtwork(id) {
     const idx = this.artworkSubmissions.findIndex(r => r.id === id);
     if (idx > -1) {
@@ -369,12 +552,13 @@ class AdminData {
       }
       sub.reviewedAt = Date.now();
       this._persistArtwork();
+      this._writeToFirestore('artwork_submissions', id, this.artworkSubmissions[idx]);
       return true;
     }
     return false;
   }
 
-  /* legacy: reject whole submission */
+  /* reject whole submission */
   rejectArtwork(id, reason) {
     const idx = this.artworkSubmissions.findIndex(r => r.id === id);
     if (idx > -1) {
@@ -389,6 +573,7 @@ class AdminData {
       sub.reviewedAt = Date.now();
       if (reason) sub.reason = reason;
       this._persistArtwork();
+      this._writeToFirestore('artwork_submissions', id, this.artworkSubmissions[idx]);
       return true;
     }
     return false;
@@ -403,6 +588,7 @@ class AdminData {
     item.status = 'approved';
     this._recalcSubStatus(this.artworkSubmissions.indexOf(sub));
     this._persistArtwork();
+    this._writeToFirestore('artwork_submissions', submissionId, sub);
     return true;
   }
 
@@ -415,6 +601,7 @@ class AdminData {
     if (reason) item.reason = reason;
     this._recalcSubStatus(this.artworkSubmissions.indexOf(sub));
     this._persistArtwork();
+    this._writeToFirestore('artwork_submissions', submissionId, sub);
     return true;
   }
 

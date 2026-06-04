@@ -60,13 +60,18 @@ const ClientListTab = {
       return '<div style="text-align:center;padding:30px;color:var(--grey-dark);">No users found</div>';
     }
 
-    return filtered.map(u => `
+    return filtered.map(u => {
+      var status = u.status || 'active';
+      var statusBadge = status === 'active' ? '' : status === 'suspended'
+        ? '<span style="background:#fff3e0;color:#e65100;padding:1px 6px;border-radius:8px;font-size:10px;margin-left:6px;">Suspended</span>'
+        : '<span style="background:#ffebee;color:#c62828;padding:1px 6px;border-radius:8px;font-size:10px;margin-left:6px;">Banned</span>';
+      return `
       <div class="client-row">
         <div class="client-avatar-wrap">
           ${this.getAvatarHtml(u.name, u.initials, u.color, u.image, 'demo-profile')}
         </div>
         <div class="client-info">
-          <div class="client-name">${u.name || 'Unknown'}</div>
+          <div class="client-name">${u.name || 'Unknown'}${statusBadge}</div>
           <div class="client-meta">${u.email || ''} · ${u.town || ''}</div>
           <div class="client-role">${u.role || 'General User'}</div>
         </div>
@@ -74,7 +79,7 @@ const ClientListTab = {
           <button class="btn-sm" onclick="Admin.showUserDetail('${u.id}')">View</button>
         </div>
       </div>
-    `).join('');
+    `}).join('');
   },
 
   renderBusinesses(businesses) {
