@@ -284,7 +284,7 @@ function doSearch(query) {
   results.innerHTML = matches.map(function(p) {
     var brandHtml = p.brand ? '<span style="color:var(--orange);font-weight:700;cursor:pointer;" onclick="event.stopPropagation();doSearch(\'' + p.brand.replace(/'/g, "\\'") + '\');document.getElementById(\'search-input\').value=\'' + p.brand.replace(/'/g, "\\'") + '\';setSearchMode(\'brand\');">\ud83c\udff7\ufe0f ' + p.brand + '</span>' : '';
 
-    return '<div style="padding:10px;border-bottom:1px solid var(--grey-light);cursor:pointer;" onclick="goTo(\'view-promos\');renderPromos();setTimeout(function(){var el=document.getElementById(\'promo-' + p.id + '\');if(el){el.scrollIntoView({behavior:\'smooth\'});el.classList.add(\'open\');}},200);">' +
+    return '<div style="padding:10px;border-bottom:1px solid var(--grey-light);cursor:pointer;" onclick="goTo(\'view-promos\');renderPromos();setTimeout(function(){var el=document.getElementById(\'promo-' + p.id + '\')||document.getElementById(\'ptext-' + p.id + '\');if(el){el.scrollIntoView({behavior:\'smooth\'});el.classList.add(\'open\');}},200);">' +
       '<div style="font-size:14px;font-weight:600;">' + p.title + '</div>' +
       '<div style="font-size:12px;color:var(--grey-dark);">' +
         p.category + ' \u00b7 ' + p.businessName + ' \u00b7 P' + (p.price || 0).toFixed(2) +
@@ -364,7 +364,6 @@ function applyCategoryFilter() {
 
 /* ─── APPLY FILTERS (category + location + promo type) ─── */
 function applyFilters() {
-  if (currentCountry === 'zimbabwe') return [];
   var items = window._promos || [];
 
   if (selectedCategories.length > 0) {
