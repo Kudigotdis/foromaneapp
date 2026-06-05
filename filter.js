@@ -524,7 +524,7 @@ function renderLocationSheet() {
       var areaCount = areas.length;
       var isSelected = selectedPlaceA === town;
       html += '<details style="padding:0 16px;">';
-      html += '<summary style="padding:14px 0;cursor:pointer;font-size:15px;display:flex;justify-content:space-between;align-items:center;' + (isSelected ? 'background:var(--orange-light);font-weight:600;' : '') + '">' +
+      html += '<summary style="padding:14px 0;cursor:pointer;font-size:15px;display:flex;justify-content:space-between;align-items:center;' + (isSelected ? 'background:var(--orange-light);font-weight:600;' : '') + '" onclick="event.preventDefault(); selectTownArea(\'' + town.replace(/'/g, "\\'") + '\',\'All Area\')">' +
         '<span>' + town + '</span>' +
         '<span class="loc-count" style="font-size:12px;color:var(--grey-dark);">' + areaCount + '</span>' +
       '</summary>';
