@@ -1116,9 +1116,9 @@
       </div>
       <div class="search-pills">
         <div class="pill active" onclick="setSearchMode('all')">All</div>
-        <div class="pill" onclick="setSearchMode('brand')">Brand</div>
-        <div class="pill" onclick="setSearchMode('business')">Business</div>
-        <div class="pill" onclick="setSearchMode('az')">A-Z</div>
+        <div class="pill" onclick="setSearchMode('brand')">Brands List</div>
+        <div class="pill" onclick="setSearchMode('business')">Find Supplier</div>
+        <div class="pill" onclick="setSearchMode('az')">Suppliers A-Z</div>
       </div>
       <input type="text" id="search-input" class="search-input" placeholder="Search by name, brand, or store..." oninput="doSearch(this.value)">
       <div id="search-results" class="search-body"></div>
@@ -1133,7 +1133,10 @@
             <input type="number" id="price-max" placeholder="e.g. 5000">
           </div>
         </div>
-        <button class="btn" onclick="confirmPriceFilter()">Confirm Filter</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" style="flex:1;" onclick="confirmPriceFilter()">Confirm Filter</button>
+          <button class="btn btn-outline" style="flex:1;" onclick="clearPriceFilter()">Clear</button>
+        </div>
       </div>
     </div>
 

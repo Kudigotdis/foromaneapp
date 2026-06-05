@@ -265,7 +265,7 @@ nav#bottom-nav {
 }
 .search-input {
   width: calc(100% - 32px); padding: 12px; margin: 12px 16px;
-  border: 1.5px solid var(--grey-mid); border-radius: var(--radius);
+  border: 1.5px solid var(--grey-mid); border-radius: 10px;
   font-size: 14px; box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -293,6 +293,7 @@ nav#bottom-nav {
   flex-shrink: 0; border-top: 1.5px solid var(--grey-light);
   padding: 12px 16px; background: var(--white);
 }
+.search-price-filter .btn { border-radius: 10px; }
 .price-filter-row { display: flex; gap: 12px; margin-bottom: 10px; }
 .price-filter-field { flex: 1; }
 .price-filter-field label {

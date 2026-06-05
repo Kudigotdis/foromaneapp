@@ -84,10 +84,10 @@ function renderIdentitySection() {
     <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Identity</div>
     <div class="sub-accordion-body">
       <div class="field-row">
-        <input type="text" class="field-input" id="id-firstname" placeholder="First Name" value="${(s.firstName||'').replace(/"/g,'&quot;')}" onchange="updateIdentityField('firstName', this.value)">
+        <input type="text" class="field-input" id="id-firstname" placeholder="First Name" value="${(s.firstName||'').replace(/"/g,'&quot;')}" oninput="updateIdentityField('firstName', this.value)">
       </div>
       <div class="field-row">
-        <input type="text" class="field-input" id="id-surname" placeholder="Surname" value="${(s.surname||'').replace(/"/g,'&quot;')}" onchange="updateIdentityField('surname', this.value)">
+        <input type="text" class="field-input" id="id-surname" placeholder="Surname" value="${(s.surname||'').replace(/"/g,'&quot;')}" oninput="updateIdentityField('surname', this.value)">
       </div>
       <div class="field-row">
         <input type="text" class="field-input" id="id-username" placeholder="Username / Handle" value="${(s.username||'').replace(/"/g,'&quot;')}" onchange="updateIdentityField('username', this.value)">
@@ -503,6 +503,7 @@ function renderCategoriesSection() {
 function updateIdentityField(key, value) {
   UserState.updateIdentity(key, value);
   localStorage.setItem('foromane_' + key, value);
+  updateAccountHero();
 }
 
 function updateGender(val) {

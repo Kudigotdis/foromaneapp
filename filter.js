@@ -126,7 +126,7 @@ function setSearchMode(mode) {
     }
     var pills = document.querySelectorAll('#view-search .pill');
     pills.forEach(function(p) {
-      p.classList.toggle('active', p.textContent.trim() === 'A-Z');
+      p.classList.toggle('active', p.textContent.trim() === 'Suppliers A-Z');
     });
     return;
   }
@@ -134,6 +134,14 @@ function setSearchMode(mode) {
   currentSearchMode = mode;
   var pills = document.querySelectorAll('#view-search .pill');
   pills.forEach(function(p) {
+    if (mode === 'business') {
+      p.classList.toggle('active', p.textContent.trim() === 'Find Supplier');
+      return;
+    }
+    if (mode === 'brand') {
+      p.classList.toggle('active', p.textContent.trim() === 'Brands List');
+      return;
+    }
     p.classList.toggle('active', p.textContent.toLowerCase() === mode);
   });
 
@@ -149,6 +157,10 @@ function setSearchMode(mode) {
     input.value = '';
     _brandSearchActive = false;
     renderBrandList('');
+  } else if (mode === 'business') {
+    input.placeholder = 'Search businesses...';
+    input.value = '';
+    doSearch('');
   } else {
     input.placeholder = 'Search by name, brand, or store...';
     if (prevMode === 'brand' || _brandSearchActive) {
@@ -240,6 +252,37 @@ function doSearch(query) {
     }
   }
 
+  if (currentSearchMode === 'business') {
+    if (!query || !query.trim()) {
+      results.innerHTML = '<p style="color:var(--grey-dark);font-size:13px;text-align:center;padding:20px;">Type to search businesses...</p>';
+      return;
+    }
+    var q = query.toLowerCase().trim();
+    var bizPool = currentCountry === 'zimbabwe' ? (window.ZIMBABWE_BUSINESSES || []) : (window.SAMPLE_BUSINESSES || []);
+    var bizMatches = bizPool.filter(function(b) {
+      return (b.name || '').toLowerCase().indexOf(q) !== -1 ||
+             (b.category || '').toLowerCase().indexOf(q) !== -1 ||
+             (b.location || '').toLowerCase().indexOf(q) !== -1 ||
+             (b.town || '').toLowerCase().indexOf(q) !== -1;
+    });
+    if (bizMatches.length === 0) {
+      results.innerHTML = '<p style="color:var(--grey-dark);font-size:13px;text-align:center;padding:20px;">No businesses found</p>';
+      return;
+    }
+    results.innerHTML = bizMatches.map(function(b) {
+      var nameEsc = b.name.replace(/'/g, "\\'");
+      var locEsc = (b.location || '').replace(/'/g, "\\'");
+      var descEsc = (b.description || '').replace(/'/g, "\\'");
+      return '<div style="padding:10px;border-bottom:1px solid var(--grey-light);cursor:pointer;" onclick="openBizProfile(\'' + b.id + '\',\'' + nameEsc + '\',\'' + (b.initials || '') + '\',\'' + (b.color || '#999') + '\',\'' + locEsc + '\',\'' + (b.phone || '') + '\',\'' + (b.public !== false) + '\',\'' + descEsc + '\',false)">' +
+        '<div style="font-size:14px;font-weight:600;">' + b.name + '</div>' +
+        '<div style="font-size:12px;color:var(--grey-dark);">' +
+          (b.category || '') + ' \u00b7 ' + (b.location || '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+    return;
+  }
+
   var minVal = parseFloat(document.getElementById('price-min') ? document.getElementById('price-min').value : '') || 0;
   var maxVal = parseFloat(document.getElementById('price-max') ? document.getElementById('price-max').value : '') || Infinity;
 
@@ -267,7 +310,6 @@ function doSearch(query) {
     var desc = p.desc || '';
 
     if (currentSearchMode === 'brand') return brand.toLowerCase().indexOf(q) !== -1;
-    if (currentSearchMode === 'business') return bizName.toLowerCase().indexOf(q) !== -1;
 
     return title.toLowerCase().indexOf(q) !== -1 ||
            brand.toLowerCase().indexOf(q) !== -1 ||
@@ -298,6 +340,15 @@ function confirmPriceFilter() {
   var minVal = document.getElementById('price-min') ? document.getElementById('price-min').value || '0' : '0';
   var maxVal = document.getElementById('price-max') ? document.getElementById('price-max').value || 'Any' : 'Any';
   showToast('Price filter: P' + minVal + ' \u2013 P' + maxVal);
+  doSearch(document.getElementById('search-input') ? document.getElementById('search-input').value : '');
+}
+
+function clearPriceFilter() {
+  var minEl = document.getElementById('price-min');
+  var maxEl = document.getElementById('price-max');
+  if (minEl) minEl.value = '';
+  if (maxEl) maxEl.value = '';
+  showToast('Price filter cleared');
   doSearch(document.getElementById('search-input') ? document.getElementById('search-input').value : '');
 }
 

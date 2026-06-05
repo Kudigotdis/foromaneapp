@@ -109,6 +109,8 @@ async function fetchUserProfileByUid(uid) {
 async function loadFirebaseUserSession() {
   var fb = await _ensureFirebase();
   if (!fb.auth.currentUser) return null;
+  // Skip profile fetch for anonymous users — no profile document exists for them
+  if (fb.auth.currentUser.isAnonymous) return null;
   return await fetchUserProfileByUid(fb.auth.currentUser.uid);
 }
 
