@@ -204,7 +204,9 @@ main::-webkit-scrollbar {
 }
 #view-business-promos.active,
 #view-business-catalogue.active,
-#view-biz-catalogue-listed-catalogue.active {
+#view-biz-catalogue-listed-catalogue.active,
+#view-business-brands.active,
+#view-business-brands-listed.active {
   display: flex !important;
   flex-direction: column;
   height: 100%;

@@ -103,6 +103,11 @@ async function loadSavedData() {
 
 async function init() {
   console.log('Initializing Foromane (Construction Hub) v2.0.0...');
+  var _isReturning = false;
+  try { _isReturning = !!localStorage.getItem('foromane_onboard_done'); } catch(e) {}
+  if (_isReturning && typeof window.showAppShell === 'function') {
+    window.showAppShell();
+  }
   migrateLegacyLocalStorage();
   migrateLegacyIndexedDB();
 
@@ -230,8 +235,11 @@ async function init() {
     console.warn('ForomaneMediaCache init failed (non-fatal):', err);
   }
 
-  if (!firebaseSessionProfile) {
+  if (!firebaseSessionProfile && !_isReturning) {
     document.getElementById('view-welcome')?.classList.add('active');
+  }
+  if (_isReturning && !_appEntered && typeof window.enterApp === 'function') {
+    window.enterApp();
   }
   window._catalogueItems = window.DEMO_CATALOGUE_ITEMS || [];
 

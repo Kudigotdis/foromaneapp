@@ -5,6 +5,116 @@
 let dirMode = localStorage.getItem('foromane_dirMode') || 'companies';
 let selectedTrades = [];
 
+// ── Claimed business state ────────────────────────────
+var _claimedCache = null;
+var _claimsLoaded = false;
+
+function _loadClaims() {
+  if (_claimsLoaded) return Promise.resolve(undefined);
+  try {
+    _claimedCache = JSON.parse(localStorage.getItem('foromane_claims') || '{}');
+  } catch(e) {
+    _claimedCache = {};
+  }
+  _claimsLoaded = true;
+  if (typeof _getFirebase !== 'function') return Promise.resolve(undefined);
+  return _getFirebase().then(function(fb) {
+    if (!fb || !fb.firestore) return;
+    var C = fb.firestore;
+    return C.getDocs(C.collection(fb.db, 'claims')).then(function(snap) {
+      snap.forEach(function(d) {
+        var data = d.data();
+        _claimedCache[d.id] = { userId: data.userId, userName: data.userName, claimedAt: data.claimedAt };
+      });
+      try { localStorage.setItem('foromane_claims', JSON.stringify(_claimedCache)); } catch(e2) {}
+    }).catch(function(err) {
+      console.warn('Firestore claims sync failed:', err.message);
+    });
+  });
+}
+
+function isBusinessClaimed(bizId) {
+  return !!(window._claimedCache && window._claimedCache[bizId]);
+}
+
+function claimBusiness(bizId, bizName) {
+  var us = window.UserState;
+  if (!us || !us.id || us.id === 'guest') {
+    showToast('Please log in to claim a business');
+    return;
+  }
+  if (isBusinessClaimed(bizId)) {
+    showToast('This business has already been claimed');
+    return;
+  }
+  var claimData = {
+    userId: us.id,
+    userName: us.name || 'Unknown',
+    businessName: bizName,
+    businessId: bizId,
+    claimedAt: new Date().toISOString()
+  };
+  _claimedCache[bizId] = claimData;
+  try { localStorage.setItem('foromane_claims', JSON.stringify(_claimedCache)); } catch(e) {}
+  if (typeof _getFirebase !== 'function') {
+    showToast('Business claimed! It will be verified soon.');
+    return;
+  }
+  _getFirebase().then(function(fb) {
+    if (!fb || !fb.firestore) {
+      showToast('Business claimed (offline — will sync later)');
+      return;
+    }
+    var C = fb.firestore;
+    C.setDoc(C.doc(fb.db, 'claims', bizId), {
+      userId: us.id,
+      userName: us.name || 'Unknown',
+      businessName: bizName,
+      claimedAt: C.Timestamp.fromDate(new Date())
+    }).then(function() {
+      showToast('Business claimed successfully!');
+    }).catch(function(err) {
+      console.warn('Firestore claim failed, saved locally:', err.message);
+    });
+  });
+}
+
+// ── Lazy-loading unclaimed business data (all chunks in parallel, one render) ──
+var _unclaimedDataLoading = {};
+
+function _ensureUnclaimedData(country) {
+  var isZw = country === 'zimbabwe';
+  var key = isZw ? 'zw' : 'bw';
+  var arr = isZw ? window.UNCLAIMED_ZIMBABWE_BUSINESSES : window.UNCLAIMED_BOTSWANA_BUSINESSES;
+  if (arr && arr._chunksTotal) return true;
+  if (_unclaimedDataLoading[key]) return false;
+  _unclaimedDataLoading[key] = true;
+
+  var totalChunks = 11;
+  var base = isZw ? 'data/unclaimed_zimbabwe_businesses_' : 'data/unclaimed_botswana_businesses_';
+  var loadedCount = 0;
+
+  function onChunkDone() {
+    loadedCount++;
+    if (loadedCount >= totalChunks) {
+      var target = isZw ? window.UNCLAIMED_ZIMBABWE_BUSINESSES : window.UNCLAIMED_BOTSWANA_BUSINESSES;
+      if (target) target._chunksTotal = totalChunks;
+      delete _unclaimedDataLoading[key];
+      renderDirectory();
+    }
+  }
+
+  for (var i = 1; i <= totalChunks; i++) {
+    var s = document.createElement('script');
+    s.src = base + i + '.js';
+    s.onload = onChunkDone;
+    s.onerror = onChunkDone;
+    document.head.appendChild(s);
+  }
+
+  return false;
+}
+
 const DIR_TYPES = ['Suppliers', 'Pros', 'Council & Public'];
 
 function openDirTypeModal() {
@@ -122,15 +232,24 @@ function renderDirectory() {
     return;
   }
 
+  _loadClaims();
+
+  if (!_ensureUnclaimedData(currentCountry)) {
+    el.innerHTML = '<div style="text-align:center;padding:48px 16px;color:var(--grey-dark);"><i class="fas fa-spinner fa-pulse" style="font-size:28px;margin-bottom:12px;display:block;color:var(--orange);"></i><p style="font-size:14px;">Loading directory...</p></div>';
+    return;
+  }
+
   let businesses;
   if (currentCountry === 'zimbabwe') {
     businesses = window.ZIMBABWE_BUSINESSES ? [...window.ZIMBABWE_BUSINESSES] : [];
+    (window.UNCLAIMED_ZIMBABWE_BUSINESSES || []).forEach(function(uz) { if (!businesses.some(function(b) { return b.id === uz.id; })) businesses.push(uz); });
     if (businesses.length === 0) {
       el.innerHTML = '<div style="text-align:center;padding:48px 16px;color:var(--grey-dark);"><i class="fas fa-address-book" style="font-size:40px;margin-bottom:12px;display:block;color:var(--grey-mid);"></i><p style="font-size:15px;font-weight:600;margin-bottom:4px;">Zimbabwe coming soon</p><p style="font-size:13px;">Supplier listings will appear here once they are registered in Zimbabwe.</p></div>';
       return;
     }
   } else {
     businesses = [...window.SAMPLE_BUSINESSES];
+    (window.UNCLAIMED_BOTSWANA_BUSINESSES || []).forEach(function(ub) { if (!businesses.some(function(b) { return b.id === ub.id; })) businesses.push(ub); });
   }
 
   if (UserState.hasBusiness()) {
@@ -176,15 +295,20 @@ function renderDirectory() {
   const letterGroups = {};
 
   businesses.forEach(b => {
-    const letter = b.name.charAt(0).toUpperCase();
+    var firstChar = b.name.charAt(0).toUpperCase();
+    var letter = /[A-Z]/.test(firstChar) ? firstChar : '#';
     if (!letterGroups[letter]) letterGroups[letter] = [];
     letterGroups[letter].push(b);
   });
 
-  const sortedLetters = Object.keys(letterGroups).sort();
+  var sortedLetters = Object.keys(letterGroups).sort(function(a, b) {
+    if (a === '#') return -1;
+    if (b === '#') return 1;
+    return a < b ? -1 : 1;
+  });
   sortedLetters.forEach((letter, idx) => {
     const letterHeader = document.createElement('div');
-    letterHeader.id = 'alpha-' + letter;
+    letterHeader.id = letter === '#' ? 'alpha-hash' : 'alpha-' + letter;
     letterHeader.style.cssText = 'padding:8px 16px 4px; font-family:var(--font-head); font-size:18px; font-weight:700; color:var(--orange); background:var(--bg); position:sticky; top:0; z-index:2;';
     letterHeader.textContent = letter;
     el.appendChild(letterHeader);
@@ -202,10 +326,14 @@ function renderDirectory() {
         ? '<div class="logo-trigger-wrapper"><img src="' + window.assetUrl(b.logo) + '" class="dir-avatar" style="object-fit:cover;" alt="" loading="lazy" width="48" height="48" onerror="this.outerHTML=\'<div class=dir-avatar style=background:' + b.color + ';>' + b.initials + '</div>\'"></div>'
         : '<div class="logo-trigger-wrapper"><div class="dir-avatar" style="background:' + b.color + ';">' + b.initials + '</div></div>';
 
+      var claimedBadge = (b.isUnclaimed && isBusinessClaimed(b.id))
+        ? '<span style="font-size:10px;color:var(--green,#27ae60);font-weight:600;background:#e8f5e9;padding:1px 6px;border-radius:3px;margin-left:6px;">Claimed</span>'
+        : '';
+
       d.innerHTML =
         avatarHtml +
         '<div class="dir-info">' +
-          '<h3>' + b.name + '</h3>' +
+          '<h3>' + b.name + claimedBadge + '</h3>' +
           '<p>' + (b.category || '') + ' \u00B7 ' + (b.location || '') + '</p>' +
         '</div>' +
         '<button class="fav-toggle-btn" onclick="event.stopPropagation();toggleFavDir(this,\'' + b.id + '\')">' +
@@ -225,7 +353,7 @@ function renderDirectory() {
       var dd = document.createElement('div');
       dd.className = 'dropdown-actions-container';
       dd.id = ddId;
-      dd.innerHTML = _buildDirCardDropdownHtml(b.id, nameEsc, phoneClean, locEsc, false, b.isUserBiz);
+      dd.innerHTML = _buildDirCardDropdownHtml(b.id, nameEsc, phoneClean, locEsc, false, b.isUserBiz, b.isUnclaimed);
 
       var w = document.createElement('div');
       w.className = 'dir-card-group';
@@ -325,7 +453,7 @@ function renderPros(el) {
       var dd = document.createElement('div');
       dd.className = 'dropdown-actions-container';
       dd.id = ddId;
-      dd.innerHTML = _buildDirCardDropdownHtml(p.id, nameEsc, phoneClean, locEsc, true, false);
+      dd.innerHTML = _buildDirCardDropdownHtml(p.id, nameEsc, phoneClean, locEsc, true, false, false);
 
       var w = document.createElement('div');
       w.className = 'dir-card-group';
@@ -368,9 +496,14 @@ function openBizProfile(bizId, name, init, color, location, phone, isPublic, des
 
   let biz = window.SAMPLE_BUSINESSES.find(b => b.id === bizId || b.name === name);
   if (!biz) biz = (window.ZIMBABWE_BUSINESSES || []).find(b => b.id === bizId || b.name === name);
+  if (!biz) biz = (window.UNCLAIMED_BOTSWANA_BUSINESSES || []).find(b => b.id === bizId || b.name === name);
+  if (!biz) biz = (window.UNCLAIMED_ZIMBABWE_BUSINESSES || []).find(b => b.id === bizId || b.name === name);
   if (!biz && isOwner && UserState.hasBusiness()) {
     biz = UserState.business;
   }
+
+  var isUnclaimedBiz = biz && biz.isUnclaimed === true;
+  var isAlreadyClaimed = isUnclaimedBiz && window.isBusinessClaimed(bizId);
 
   const categories = biz && biz.categories ? biz.categories : (biz && biz.category ? [biz.category] : []);
   const catCount = categories.length;
@@ -458,6 +591,10 @@ function openBizProfile(bizId, name, init, color, location, phone, isPublic, des
         <span style="color:var(--orange);font-size:14px;font-weight:700;">${brandCount}</span>
       </div>
     </div>
+    ${isUnclaimedBiz ? (isAlreadyClaimed
+      ? '<div style="text-align:center;padding:8px 16px;margin:8px 12px;background:#e8f5e9;border-radius:8px;font-size:13px;color:var(--green,#27ae60);font-weight:600;"><i class="fas fa-check-circle"></i> This business has been claimed</div>'
+      : '<div style="text-align:center;padding:12px 16px;margin:8px 12px;background:#fff3e0;border-radius:8px;"><p style="font-size:13px;color:var(--grey-dark);margin:0 0 8px;">Is this your business? Claim it to manage your profile, promos and catalogue.</p><button class="btn" onclick="event.stopPropagation();claimBusiness(\'' + bizId + '\',\'' + nameEsc + '\');goTo(\'view-directory\')" style="padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;"><i class="fas fa-hand-paper"></i> Claim this Business</button></div>')
+    : ''}
     <div style="text-align:center;padding:6px 0;">
       <span style="font-size:11px;color:var(--grey-dark);cursor:pointer;" onclick="reportBusiness('${bizId}','${nameEsc}')">Report this business</span>
     </div>
@@ -1145,7 +1282,7 @@ function toggleFavDir(btn, id) {
   }
 }
 
-function _buildDirCardDropdownHtml(bizId, name, phone, location, isPro, isUserBiz) {
+function _buildDirCardDropdownHtml(bizId, name, phone, location, isPro, isUserBiz, isUnclaimed) {
   var nameEsc = (name || '').replace(/'/g, "\\'");
   var locEsc = (location || '').replace(/'/g, "\\'");
   var phoneStr = phone || '';
@@ -1164,6 +1301,7 @@ function _buildDirCardDropdownHtml(bizId, name, phone, location, isPro, isUserBi
   } else {
     profileAction = 'openBizProfile(\'' + bizId + '\',\'' + nameEsc + '\',\'\',\'\',\'' + locEsc + '\',\'' + phoneStr + '\',false,\'\',' + (isUserBiz ? 'true' : 'false') + ')';
   }
+
   return '<div class="dropdown-inner">' +
     '<a class="action-option-btn" onclick="event.stopPropagation();closeDirDropdowns();callBusiness(\'' + phoneStr + '\')"><img src="assets/icons/' + callIcon + '" alt="Call"></a>' +
     '<a class="action-option-btn" onclick="event.stopPropagation();closeDirDropdowns();openFacebook(\'' + nameEsc + '\')"><img src="assets/icons/' + fbIcon + '" alt="Facebook"></a>' +
@@ -1510,9 +1648,8 @@ function requestQuote(businessName, phone, itemTitle, businessId, userId) {
 
 function renderAlphaNav(el, useHash) {
   if (!el) return;
-  var letters = [];
+  var letters = ['#'];
   for (var i = 65; i <= 90; i++) letters.push(String.fromCharCode(i));
-  if (useHash) letters.push('#');
   var html = '<div class="alpha-nav" style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;position:sticky;top:0;z-index:3;background:var(--bg);border-bottom:1px solid rgba(0,0,0,0.2);">';
   html += letters.map(function(l) {
     return '<button class="alpha-btn" style="flex:0 0 auto;width:32px;height:32px;border:1px solid #ddd;border-radius:50%;background:#fff;color:var(--grey-dark);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="scrollToAlpha(\'' + l + '\')" title="Jump to ' + l + '">' + l + '</button>';
@@ -1549,6 +1686,8 @@ window.backToCatalogueCategories = backToCatalogueCategories;
 function catItemQty(id, delta, basePrice, btn) { changeQty(id, delta, basePrice, btn); }
 window.catItemQty = catItemQty;
 window.toggleBizPromo = toggleBizPromo;
+window.isBusinessClaimed = isBusinessClaimed;
+window.claimBusiness = claimBusiness;
 
 /* ─── RETAIL HOURS DISPLAY ─── */
 function formatTime24(val) {

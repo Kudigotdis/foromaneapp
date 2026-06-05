@@ -70,6 +70,12 @@ window.getBusinessLogo = function(bizId) {
         window._bizLogoCache[zb.id] = zb.logo ? window.assetUrl(zb.logo) : null;
       }
     }
+    (window.UNCLAIMED_BOTSWANA_BUSINESSES || []).forEach(function(ub) {
+      window._bizLogoCache[ub.id] = ub.logo ? window.assetUrl(ub.logo) : null;
+    });
+    (window.UNCLAIMED_ZIMBABWE_BUSINESSES || []).forEach(function(uz) {
+      window._bizLogoCache[uz.id] = uz.logo ? window.assetUrl(uz.logo) : null;
+    });
   }
   return window._bizLogoCache[bizId] || null;
 };

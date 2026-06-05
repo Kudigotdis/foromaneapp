@@ -149,11 +149,23 @@ function manageUI(viewId) {
   }
 }
 
+var _appEntered = false;
+
+function showAppShell() {
+  var h = document.getElementById('app-header');
+  var n = document.getElementById('bottom-nav');
+  if (h) h.classList.remove('shell-hidden');
+  if (n) n.style.display = 'flex';
+}
+
 function enterApp() {
-  document.getElementById('app-header').classList.remove('shell-hidden');
-  document.getElementById('bottom-nav').style.display = 'flex';
+  if (_appEntered) return;
+  _appEntered = true;
+  showAppShell();
   navTab('view-promos', 'nav-promos');
 }
+
+window.showAppShell = showAppShell;
 
 function togglePromoShell(hide) {
   const header = document.getElementById('app-header');

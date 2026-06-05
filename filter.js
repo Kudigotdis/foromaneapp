@@ -258,7 +258,9 @@ function doSearch(query) {
       return;
     }
     var q = query.toLowerCase().trim();
-    var bizPool = currentCountry === 'zimbabwe' ? (window.ZIMBABWE_BUSINESSES || []) : (window.SAMPLE_BUSINESSES || []);
+    var bizPool = currentCountry === 'zimbabwe'
+      ? (window.ZIMBABWE_BUSINESSES || []).concat(window.UNCLAIMED_ZIMBABWE_BUSINESSES || [])
+      : (window.SAMPLE_BUSINESSES || []).concat(window.UNCLAIMED_BOTSWANA_BUSINESSES || []);
     var bizMatches = bizPool.filter(function(b) {
       return (b.name || '').toLowerCase().indexOf(q) !== -1 ||
              (b.category || '').toLowerCase().indexOf(q) !== -1 ||
