@@ -5,6 +5,22 @@
 let dirMode = localStorage.getItem('foromane_dirMode') || 'companies';
 let selectedTrades = [];
 
+var UNCLAIMED_LOGO = 'assets/images/company_logos_dummy/foromane_logo_thumbnail_unclaimed_business.webp';
+
+function _expandUnclaimed(tuple) {
+  return {
+    id: tuple[0],
+    name: tuple[1],
+    category: tuple[2],
+    location: tuple[3],
+    phone: tuple[4],
+    initials: tuple[5],
+    color: tuple[6],
+    logo: UNCLAIMED_LOGO,
+    isUnclaimed: true
+  };
+}
+
 // ── Claimed business state ────────────────────────────
 var _claimedCache = null;
 var _claimsLoaded = false;
@@ -86,31 +102,47 @@ function _ensureUnclaimedData(country) {
   var isZw = country === 'zimbabwe';
   var key = isZw ? 'zw' : 'bw';
   var arr = isZw ? window.UNCLAIMED_ZIMBABWE_BUSINESSES : window.UNCLAIMED_BOTSWANA_BUSINESSES;
-  if (arr && arr._chunksTotal) return true;
+  if (arr && arr._chunksDone) return true;
   if (_unclaimedDataLoading[key]) return false;
   _unclaimedDataLoading[key] = true;
 
-  var totalChunks = 11;
   var base = isZw ? 'data/unclaimed_zimbabwe_businesses_' : 'data/unclaimed_botswana_businesses_';
+  var totalChunks = 0;
   var loadedCount = 0;
 
-  function onChunkDone() {
-    loadedCount++;
-    if (loadedCount >= totalChunks) {
-      var target = isZw ? window.UNCLAIMED_ZIMBABWE_BUSINESSES : window.UNCLAIMED_BOTSWANA_BUSINESSES;
-      if (target) target._chunksTotal = totalChunks;
-      delete _unclaimedDataLoading[key];
-      renderDirectory();
+  function _expandAndRender() {
+    var target = isZw ? window.UNCLAIMED_ZIMBABWE_BUSINESSES : window.UNCLAIMED_BOTSWANA_BUSINESSES;
+    if (target) {
+      for (var ci = 0; ci < target.length; ci++) {
+        if (Array.isArray(target[ci])) target[ci] = _expandUnclaimed(target[ci]);
+      }
+      target._chunksDone = 1;
     }
+    delete _unclaimedDataLoading[key];
+    renderDirectory();
   }
 
-  for (var i = 1; i <= totalChunks; i++) {
-    var s = document.createElement('script');
-    s.src = base + i + '.js';
-    s.onload = onChunkDone;
-    s.onerror = onChunkDone;
-    document.head.appendChild(s);
-  }
+  // Load chunk 1 first to discover total chunks from embedded _chunksTotal
+  var s = document.createElement('script');
+  s.src = base + '1.js';
+  s.onload = function() {
+    var target = isZw ? window.UNCLAIMED_ZIMBABWE_BUSINESSES : window.UNCLAIMED_BOTSWANA_BUSINESSES;
+    totalChunks = (target && target._chunksTotal) || 1;
+    loadedCount = 1;
+    for (var i = 2; i <= totalChunks; i++) {
+      var t = document.createElement('script');
+      t.src = base + i + '.js';
+      t.onload = function() { loadedCount++; if (loadedCount >= totalChunks) _expandAndRender(); };
+      t.onerror = function() { loadedCount++; if (loadedCount >= totalChunks) _expandAndRender(); };
+      document.head.appendChild(t);
+    }
+    if (totalChunks <= 1) _expandAndRender();
+  };
+  s.onerror = function() {
+    delete _unclaimedDataLoading[key];
+    renderDirectory();
+  };
+  document.head.appendChild(s);
 
   return false;
 }
@@ -291,10 +323,11 @@ function renderDirectory() {
 
   businesses.sort((a, b) => a.name.localeCompare(b.name));
 
-  el.innerHTML = '';
-  const letterGroups = {};
-
-  businesses.forEach(b => {
+  // ── Virtual scroller: build layout, render visible slice ──
+  const HEADER_H = 36;
+  const CARD_H = 84;
+  var letterGroups = {};
+  businesses.forEach(function(b) {
     var firstChar = b.name.charAt(0).toUpperCase();
     var letter = /[A-Z]/.test(firstChar) ? firstChar : '#';
     if (!letterGroups[letter]) letterGroups[letter] = [];
@@ -306,70 +339,149 @@ function renderDirectory() {
     if (b === '#') return 1;
     return a < b ? -1 : 1;
   });
-  sortedLetters.forEach((letter, idx) => {
-    const letterHeader = document.createElement('div');
-    letterHeader.id = letter === '#' ? 'alpha-hash' : 'alpha-' + letter;
-    letterHeader.style.cssText = 'padding:8px 16px 4px; font-family:var(--font-head); font-size:18px; font-weight:700; color:var(--orange); background:var(--bg); position:sticky; top:0; z-index:2;';
-    letterHeader.textContent = letter;
-    el.appendChild(letterHeader);
 
-    letterGroups[letter].forEach(b => {
-      var ddId = 'dd-' + b.id;
-      var nameEsc = b.name.replace(/'/g, "\\'");
-      var locEsc = (b.location || '').replace(/'/g, "\\'");
-      var phoneClean = b.phone ? b.phone.replace(/[^0-9]/g, '') : '';
-
-      var d = document.createElement('div');
-      d.className = 'dir-card';
-
-      var avatarHtml = b.logo
-        ? '<div class="logo-trigger-wrapper"><img src="' + window.assetUrl(b.logo) + '" class="dir-avatar" style="object-fit:cover;" alt="" loading="lazy" width="48" height="48" onerror="this.outerHTML=\'<div class=dir-avatar style=background:' + b.color + ';>' + b.initials + '</div>\'"></div>'
-        : '<div class="logo-trigger-wrapper"><div class="dir-avatar" style="background:' + b.color + ';">' + b.initials + '</div></div>';
-
-      var claimedBadge = (b.isUnclaimed && isBusinessClaimed(b.id))
-        ? '<span style="font-size:10px;color:var(--green,#27ae60);font-weight:600;background:#e8f5e9;padding:1px 6px;border-radius:3px;margin-left:6px;">Claimed</span>'
-        : '';
-
-      d.innerHTML =
-        avatarHtml +
-        '<div class="dir-info">' +
-          '<h3>' + b.name + claimedBadge + '</h3>' +
-          '<p>' + (b.category || '') + ' \u00B7 ' + (b.location || '') + '</p>' +
-        '</div>' +
-        '<button class="fav-toggle-btn" onclick="event.stopPropagation();toggleFavDir(this,\'' + b.id + '\')">' +
-          '<img src="assets/icons/' + (UserState.isFavourite(b.id) ? 'heart_active_icon' : 'heart_inactive_icon') + '.webp" style="width:22px;height:22px;display:block;" loading="lazy">' +
-        '</button>';
-
-      var trigger = d.querySelector('.logo-trigger-wrapper');
-      if (trigger) {
-        trigger.onclick = function(e) {
-          e.stopPropagation();
-          openBizProfile(b.id, b.name, b.initials, b.color, b.location, b.phone, b.public, b.description, b.isUserBiz);
-        };
-      }
-
-      d.onclick = function() { toggleDirDropdown(ddId); };
-
-      var dd = document.createElement('div');
-      dd.className = 'dropdown-actions-container';
-      dd.id = ddId;
-      dd.innerHTML = _buildDirCardDropdownHtml(b.id, nameEsc, phoneClean, locEsc, false, b.isUserBiz, b.isUnclaimed);
-
-      var w = document.createElement('div');
-      w.className = 'dir-card-group';
-      w.appendChild(d);
-      w.appendChild(dd);
-      el.appendChild(w);
+  var top = 0;
+  _dirRows = [];
+  sortedLetters.forEach(function(letter) {
+    _dirRows.push({ type: 'header', letter: letter, top: top, height: HEADER_H });
+    top += HEADER_H;
+    letterGroups[letter].forEach(function(biz) {
+      _dirRows.push({ type: 'card', biz: biz, top: top, height: CARD_H });
+      top += CARD_H;
     });
-
-    if (idx < sortedLetters.length - 1) {
-      const divider = document.createElement('hr');
-      divider.style.cssText = 'margin:0;border:none;border-top:1px solid rgba(0,0,0,0.05);';
-      el.appendChild(divider);
-    }
   });
+  _dirTotalH = top;
 
+  var scroller = el.parentElement;
+  if (scroller) _dirScrollEl = scroller;
+
+  // Inner container sizing
+  el.style.cssText = 'position:relative;height:' + _dirTotalH + 'px;padding:0;';
+
+  // Floating sticky header
+  var fh = document.getElementById('dir-floating-header');
+  if (!fh) {
+    fh = document.createElement('div');
+    fh.id = 'dir-floating-header';
+    fh.style.cssText = 'position:sticky;top:0;z-index:3;padding:8px 16px 4px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--orange);background:var(--bg);display:none;';
+    scroller.insertBefore(fh, el);
+  }
+
+  // Scroll handler
+  scroller.onscroll = _onDirScroll;
+
+  _onDirScroll();
 }
+
+// ── Virtual scroller state ──
+var _dirRows = [];
+var _dirTotalH = 0;
+var _dirScrollEl = null;
+
+function _onDirScroll() {
+  if (!_dirScrollEl || _dirRows.length === 0) return;
+  var el = document.getElementById('directory-list');
+  if (!el) return;
+
+  var st = _dirScrollEl.scrollTop;
+  var vh = _dirScrollEl.clientHeight;
+  var BUFFER = 400;
+  var startY = Math.max(0, st - BUFFER);
+  var endY = st + vh + BUFFER;
+  var rows = _dirRows;
+
+  // Binary search first visible row
+  var lo = 0, hi = rows.length;
+  while (lo < hi) {
+    var mid = (lo + hi) >> 1;
+    if (rows[mid].top + rows[mid].height < startY) lo = mid + 1;
+    else hi = mid;
+  }
+  var si = lo;
+
+  var ei = si;
+  while (ei < rows.length && rows[ei].top < endY) ei++;
+
+  // Build HTML for visible slice
+  var html = '';
+  for (var i = si; i < ei; i++) {
+    var r = rows[i];
+    if (r.type === 'header') {
+      html += '<div style="position:absolute;top:' + r.top + 'px;left:0;right:0;height:' + r.height + 'px;padding:8px 16px 4px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--orange);background:var(--bg);z-index:2;">' + r.letter + '</div>';
+    } else {
+      html += _vsCardHtml(r.biz, r.top, r.height);
+    }
+  }
+  el.innerHTML = html;
+
+  // Update floating header
+  var fh = document.getElementById('dir-floating-header');
+  if (!fh) return;
+  var topIdx = lo;
+  var headerIdx = -1;
+  for (var j = topIdx; j >= 0; j--) {
+    if (rows[j].type === 'header') { headerIdx = j; break; }
+  }
+  if (headerIdx >= 0) {
+    fh.textContent = rows[headerIdx].letter;
+    fh.style.display = '';
+  } else {
+    fh.style.display = 'none';
+  }
+}
+
+function _vsCardHtml(b, top, height) {
+  var ddId = 'dd-' + b.id;
+  var nameEsc = b.name.replace(/'/g, "\\'");
+  var locEsc = (b.location || '').replace(/'/g, "\\'");
+  var phoneClean = b.phone ? b.phone.replace(/[^0-9]/g, '') : '';
+  var bIdHtml = '<button class="fav-toggle-btn" onclick="event.stopPropagation();toggleFavDir(this,\'' + b.id + '\')">' +
+    '<img src="assets/icons/' + (UserState.isFavourite(b.id) ? 'heart_active_icon' : 'heart_inactive_icon') + '.webp" style="width:22px;height:22px;display:block;" loading="lazy">' +
+  '</button>';
+
+  var claimedBadge = (b.isUnclaimed && isBusinessClaimed(b.id))
+    ? '<span style="font-size:10px;color:var(--green,#27ae60);font-weight:600;background:#e8f5e9;padding:1px 6px;border-radius:3px;margin-left:6px;">Claimed</span>'
+    : '';
+
+  var avatarHtml = b.logo
+    ? '<div class="logo-trigger-wrapper" onclick="event.stopPropagation();openBizProfile(\'' + b.id + '\',\'' + nameEsc + '\',\'' + (b.initials||'') + '\',\'' + (b.color||'#999') + '\',\'' + locEsc + '\',\'' + (b.phone||'') + '\',\'' + (b.public!==false) + '\',\'\',' + (b.isUserBiz?'true':'false') + ')">' +
+      '<img src="' + window.assetUrl(b.logo) + '" class="dir-avatar" style="object-fit:cover;" alt="" loading="lazy" width="48" height="48" onerror="this.outerHTML=\'<div class=dir-avatar style=background:' + b.color + ';>' + b.initials + '</div>\'">' +
+      '</div>'
+    : '<div class="logo-trigger-wrapper" onclick="event.stopPropagation();openBizProfile(\'' + b.id + '\',\'' + nameEsc + '\',\'' + (b.initials||'') + '\',\'' + (b.color||'#999') + '\',\'' + locEsc + '\',\'' + (b.phone||'') + '\',\'' + (b.public!==false) + '\',\'\',' + (b.isUserBiz?'true':'false') + ')">' +
+      '<div class="dir-avatar" style="background:' + b.color + ';">' + b.initials + '</div>' +
+      '</div>';
+
+  return '<div class="dir-card-group" style="position:absolute;top:' + top + 'px;left:16px;right:16px;height:' + height + 'px;">' +
+    '<div class="dir-card" onclick="toggleDirDropdown(\'' + ddId + '\')">' +
+      avatarHtml +
+      '<div class="dir-info">' +
+        '<h3 style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + b.name + claimedBadge + '</h3>' +
+        '<p>' + (b.category || '') + ' \u00B7 ' + (b.location || '') + '</p>' +
+      '</div>' +
+      bIdHtml +
+    '</div>' +
+    '<div class="dropdown-actions-container" id="' + ddId + '">' +
+      _buildDirCardDropdownHtml(b.id, nameEsc, phoneClean, locEsc, false, b.isUserBiz, b.isUnclaimed) +
+    '</div>' +
+  '</div>';
+}
+
+// Override scrollToAlpha to use virtual scroller positions
+var _scrollToAlphaOrig = scrollToAlpha;
+scrollToAlpha = function(letter) {
+  var rows = _dirRows;
+  if (rows.length > 0) {
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].type === 'header' && rows[i].letter === letter) {
+        var scroller = _dirScrollEl || document.querySelector('.dir-scroll');
+        if (scroller) { scroller.scrollTop = rows[i].top; return; }
+        break;
+      }
+    }
+  }
+  // Fallback
+  if (typeof _scrollToAlphaOrig === 'function') _scrollToAlphaOrig(letter);
+};
 
 function renderPros(el) {
   if (currentCountry === 'zimbabwe') {

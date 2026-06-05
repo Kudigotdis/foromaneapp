@@ -46,7 +46,6 @@ function escapeJs(str) {
   return str
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
-    .replace(/'/g, "\\'")
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r');
 }
@@ -84,15 +83,15 @@ function parseCSVRow(line) {
 }
 
 function serializeBusiness(b) {
-  return '{id:"' + escapeJs(b.id) +
-    '",name:"' + escapeJs(b.name) +
-    '",category:"' + escapeJs(b.category) +
-    '",location:"' + escapeJs(b.location) +
-    '",phone:"' + escapeJs(b.phone) +
-    '",initials:"' + escapeJs(b.initials) +
-    '",color:"' + escapeJs(b.color) +
-    '",logo:"' + escapeJs(b.logo) +
-    '",isUnclaimed:true}';
+  return '[' +
+    JSON.stringify(b.id) + ',' +
+    JSON.stringify(b.name) + ',' +
+    JSON.stringify(b.category) + ',' +
+    JSON.stringify(b.location) + ',' +
+    JSON.stringify(b.phone) + ',' +
+    JSON.stringify(b.initials) + ',' +
+    JSON.stringify(b.color) +
+  ']';
 }
 
 function convertCSVtoChunks(csvPath, idPrefix, outputDir, outputBaseName) {
@@ -207,6 +206,8 @@ function convertCSVtoChunks(csvPath, idPrefix, outputDir, outputBaseName) {
     jsLines.push('(function(){');
     jsLines.push('var target = window.' + varName + ';');
     jsLines.push('if (!target) { target = []; window.' + varName + ' = target; }');
+    jsLines.push('target._chunksTotal = ' + totalChunks + ';');
+    jsLines.push('window._UNCLAIMED_LOADED = (window._UNCLAIMED_LOADED || 0) + 1;');
     jsLines.push('var data = [');
 
     for (var j = 0; j < chunkData.length; j++) {
@@ -224,7 +225,7 @@ function convertCSVtoChunks(csvPath, idPrefix, outputDir, outputBaseName) {
   }
 
   console.log('Total: ' + totalChunks + ' chunks, ' + rows.length + ' businesses');
-  return { totalChunks: totalChunks };
+  return { totalChunks: totalChunks, varName: varName };
 }
 
 function main() {

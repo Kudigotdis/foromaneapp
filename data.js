@@ -70,11 +70,14 @@ window.getBusinessLogo = function(bizId) {
         window._bizLogoCache[zb.id] = zb.logo ? window.assetUrl(zb.logo) : null;
       }
     }
+    var _unclaimedLogo = 'assets/images/company_logos_dummy/foromane_logo_thumbnail_unclaimed_business.webp';
     (window.UNCLAIMED_BOTSWANA_BUSINESSES || []).forEach(function(ub) {
-      window._bizLogoCache[ub.id] = ub.logo ? window.assetUrl(ub.logo) : null;
+      var ubId = Array.isArray(ub) ? ub[0] : ub.id;
+      window._bizLogoCache[ubId] = window.assetUrl(_unclaimedLogo);
     });
     (window.UNCLAIMED_ZIMBABWE_BUSINESSES || []).forEach(function(uz) {
-      window._bizLogoCache[uz.id] = uz.logo ? window.assetUrl(uz.logo) : null;
+      var uzId = Array.isArray(uz) ? uz[0] : uz.id;
+      window._bizLogoCache[uzId] = window.assetUrl(_unclaimedLogo);
     });
   }
   return window._bizLogoCache[bizId] || null;
