@@ -252,23 +252,24 @@ async function init() {
 
   reloadNotesForUser();
 
-  setTimeout(function() {
-    (async function() {
-      try {
-        const promoCount = await ForomaneDB.getAll('promos');
-        if (promoCount.length !== window.SAMPLE_PROMOS.length) {
-          if (promoCount.length > 0) {
-            for (const p of promoCount) {
-              await ForomaneDB.delete('promos', p.id);
-            }
-          }
-          for (const promo of window.SAMPLE_PROMOS) {
-            await ForomaneDB.put('promos', promo);
+  (async function() {
+    try {
+      if (typeof loadDemoExtraData === 'function') {
+        await loadDemoExtraData();
+      }
+      const promoCount = await ForomaneDB.getAll('promos');
+      if (promoCount.length !== window.SAMPLE_PROMOS.length) {
+        if (promoCount.length > 0) {
+          for (const p of promoCount) {
+            await ForomaneDB.delete('promos', p.id);
           }
         }
-      } catch(e) { console.warn('Background promo seed:', e); }
-    })();
-  }, 2000);
+        for (const promo of window.SAMPLE_PROMOS) {
+          await ForomaneDB.put('promos', promo);
+        }
+      }
+    } catch(e) { console.warn('Background promo seed:', e); }
+  })();
 }
 
 async function loadProfileFromDB() {

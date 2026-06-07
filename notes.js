@@ -26,6 +26,9 @@ if (!window._notes) {
 }
 
 async function seedDemoNotes() {
+  if (typeof loadDemoExtraData === 'function') {
+    await loadDemoExtraData();
+  }
   if (!window.DEMO_NOTES || !ForomaneDB.db) return;
   try {
     const existing = await ForomaneDB.getAll('notes');
@@ -68,6 +71,12 @@ var _promoNotesAdded = {};
 function renderPromoNotes() {
   var el = document.getElementById('notes-list');
   if (!el) return;
+  if (typeof loadDemoExtraData === 'function' && (!window.DEMO_PROMO_NOTES || window.DEMO_PROMO_NOTES.length === 0)) {
+    loadDemoExtraData().then(function() {
+      renderPromoNotes();
+    });
+    return;
+  }
   var notes = window.DEMO_PROMO_NOTES || [];
   if (notes.length === 0) {
     el.innerHTML = '<div style="text-align:center;padding:48px 16px;color:var(--grey-dark);">' +

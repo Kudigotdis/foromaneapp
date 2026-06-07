@@ -55,6 +55,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /claims/{claimId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow delete: if false;
+    }
+
     match /admins/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null

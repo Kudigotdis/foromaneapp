@@ -585,7 +585,14 @@ document.addEventListener('scroll', function(e) {
 }, true);
 
 /* ─── INIT ─── */
-window._promos = [...(window.SAMPLE_PROMOS || [])];
+window._promos = [];
+if (typeof loadDemoExtraData === 'function') {
+  loadDemoExtraData().then(function() {
+    window._promos = [...(window.SAMPLE_PROMOS || [])];
+    if (typeof renderPromos === 'function') renderPromos();
+    if (typeof checkPromoStatuses === 'function') checkPromoStatuses();
+  });
+}
 window.togglePromo = togglePromo;
 window.changeQty = changeQty;
 window.toggleLike = toggleLike;
