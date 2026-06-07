@@ -99,6 +99,13 @@ function getPromoImgMode() {
 var _promoPage = 0;
 const PROMO_BATCH_SIZE = 24;
 
+function formatPromoLocation(loc) {
+  if (typeof loc === 'object' && loc) {
+    return (loc.town || '') + (loc.area ? ' | ' + loc.area : '');
+  }
+  return loc || '';
+}
+
 function _renderPromoCard(p, imgMode) {
   const isOwnPromo = p.businessId === 'biz_user';
   const status = p.promo ? getPromoRemaining(p.promo.expiresAt) : { text: '', expired: false };
@@ -143,8 +150,8 @@ function _renderPromoCard(p, imgMode) {
       '<div class="promo-supplier" onclick="openBizFromPromo(\'' + p.businessId + '\',\'' + p.businessName.replace(/'/g,"\\'") + '\')">' +
         (function(bId, init, col){ var logo = window.getBusinessLogo(bId); return logo ? '<img src="' + logo + '" class="avatar-square" style="object-fit:cover;" alt="" onerror="this.outerHTML=\'<div class=avatar-square style=background:' + col + ';>' + init + '</div>\'">' : '<div class="avatar-square" style="background:' + col + ';">' + init + '</div>'; })(p.businessId, p.businessInit, p.businessColor) +
         '<div>' +
-          '<div style="font-size:14px;">' + p.businessName + '</div>' +
-          '<div style="font-size:11px;color:var(--grey-dark);font-weight:400;">' + p.location + '</div>' +
+          '<div style="font-size:16px;" id="promo-biz-name-' + p.id + '">' + p.businessName + '</div>' +
+          '<div style="font-size:13px;color:var(--grey-dark);font-weight:400;" id="promo-biz-loc-' + p.id + '">' + formatPromoLocation(p.location) + '</div>' +
         '</div>' +
       '</div>' +
       (isOwnPromo ? '<div style="font-size:10px;color:var(--orange);font-weight:600;margin-bottom:4px;">Your Promo</div>' : '') +
@@ -152,7 +159,7 @@ function _renderPromoCard(p, imgMode) {
       (p.brand ? '<div class="promo-brand"><i class="fas fa-tag" style="margin-right:4px;font-size:11px;"></i>' + p.brand + '</div>' : '') +
       '<div class="promo-desc">' + (p.desc || '') + '</div>' +
       '<div class="qty-row">' +
-        '<div class="qty-price">P <span class="cp">' + ((p.basePrice || p.price || 0) * (p.qty || 1)).toFixed(2) + '</span> <span style="font-size:12px;font-weight:400;color:var(--orange);">' + (p.unit || 'each') + '</span></div>' +
+        '<div class="qty-price"><div>P <span class="cp">' + ((p.basePrice || p.price || 0) * (p.qty || 1)).toFixed(2) + '</span></div><div style="font-size:12px;font-weight:400;color:var(--orange);margin-top:2px;">' + (p.unit || 'each') + '</div></div>' +
         '<div class="qty-controls">' +
           '<button class="qty-btn" onclick="changeQty(\'' + p.id + '\',-1,' + (p.basePrice || p.price || 0) + ',this)">\u2212</button>' +
           '<span class="qv" style="min-width:20px;text-align:center;">' + (p.qty || 1) + '</span>' +
@@ -346,7 +353,7 @@ function renderTextPromos() {
       '<div class="promo-text-main" onclick="toggleTextPromo(\'' + p.id + '\')">' +
         '<div class="promo-title">' + p.title + '</div>' +
         '<div class="qty-row" style="margin-top:0;">' +
-          '<div class="qty-price">P <span class="cp">' + ((p.basePrice || p.price || 0) * (p.qty || 1)).toFixed(2) + '</span> <span style="font-size:12px;font-weight:400;color:var(--orange);">' + (p.unit || 'each') + '</span></div>' +
+'<div class="qty-price"><div>P <span class="cp">' + ((p.basePrice || p.price || 0) * (p.qty || 1)).toFixed(2) + '</span></div><div style="font-size:12px;font-weight:400;color:var(--orange);margin-top:2px;">' + (p.unit || 'each') + '</div></div>' +
           '<div class="qty-controls">' +
             '<button class="qty-btn" onclick="event.stopPropagation();changeQty(\'' + p.id + '\',-1,' + (p.basePrice || p.price || 0) + ',this)">\u2212</button>' +
             '<span class="qv" style="min-width:20px;text-align:center;">' + (p.qty || 1) + '</span>' +

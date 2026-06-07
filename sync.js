@@ -164,6 +164,27 @@ class SyncQueue {
           }
         }
 
+        if (item.type === 'delete') {
+          var store = item.payload && item.payload.store;
+          var targetId = item.payload && item.payload.id;
+          if (store && targetId && userId) {
+            var dfolder = await window.DriveAPI.ensureUserFolder(userId);
+            var dfileName = store + '.json';
+            var existing = await window.DriveAPI.readJSON(dfolder.id, dfileName);
+            if (existing) {
+              if (Array.isArray(existing)) {
+                var filtered = existing.filter(function(e) { return e.id !== targetId; });
+                await window.DriveAPI.upsertJSON(dfolder.id, dfileName, filtered);
+              } else if (existing.id === targetId) {
+                await window.DriveAPI.deleteFile(dfolder.id, dfileName);
+              }
+            }
+          }
+          await this.remove(item.id);
+          processed++;
+          continue;
+        }
+
         if (!folderId) {
           console.warn('SyncQueue: cannot determine folder for item', item.id);
           continue;

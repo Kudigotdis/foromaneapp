@@ -42,8 +42,8 @@ const UserState = {
   businessRole: null,
   items: [],
   kpi: { ads: 0, views: 0, likes: 0, noteAdds: 0, interactions: 0 },
-  promosThisWeek: 0,
-  freePromoUsed: false,
+  promosThisWeek: parseInt(localStorage.getItem("foromane_promosThisWeek") || "0", 10),
+  freePromoUsed: localStorage.getItem("foromane_freePromoUsed") === "true",
   promoWeekReset: (() => {
     const stored = localStorage.getItem("foromane_promoWeekReset");
     if (stored) return stored;
@@ -132,7 +132,8 @@ const UserState = {
       this.name = (this.firstName + ' ' + this.surname).trim() || this.name;
       localStorage.setItem("foromane_name", this.name);
     }
-    localStorage.setItem("foromane_" + field, value);
+    const storageKey = field === 'dateOfBirth' ? 'dob' : field;
+    localStorage.setItem("foromane_" + storageKey, value);
   },
 
   // Contact helpers

@@ -19,6 +19,7 @@ function openPromoTypeModal() {
     const isSelected = type === promoTypes[promoTypeIdx];
     return `<div style="padding:14px 16px; border-bottom:1px solid var(--grey-light); font-size:15px; cursor:pointer; ${isSelected ? 'background:var(--orange-light); font-weight:600; color:var(--orange);' : ''}" onclick="selectPromoType('${type}')">${type}${isSelected ? ' <img src="assets/icons/solid/check-2_orange.webp" style="width:16px;height:16px;float:right;">' : ''}</div>`;
   }).join('');
+  openModal('promo-type-modal');
 }
 
 function selectPromoType(type) {
@@ -72,6 +73,7 @@ function findNearestTown(lat, lng) {
 }
 
 
+function nearMe(btn) {
   if (!navigator.geolocation) {
     showToast('Geolocation not available on this device');
     if (btn) btn.innerHTML = '<i class="fas fa-location-dot" style="font-size:12px;"></i>';
@@ -204,14 +206,14 @@ function doSearch(query) {
     const cat = p.category || '';
     const desc = p.desc || '';
 
-    if (currentSearchMode === 'brand') return brand.toLowerCase().includes(q);
-    if (currentSearchMode === 'business') return bizName.toLowerCase().includes(q);
+    if (currentSearchMode === 'brand') return brand.toLowerCase().startsWith(q);
+    if (currentSearchMode === 'business') return bizName.toLowerCase().startsWith(q);
     
-    return title.toLowerCase().includes(q) ||
-           brand.toLowerCase().includes(q) ||
-           bizName.toLowerCase().includes(q) ||
-           cat.toLowerCase().includes(q) ||
-           desc.toLowerCase().includes(q);
+    return title.toLowerCase().startsWith(q) ||
+           brand.toLowerCase().startsWith(q) ||
+           bizName.toLowerCase().startsWith(q) ||
+           cat.toLowerCase().startsWith(q) ||
+           desc.toLowerCase().startsWith(q);
   });
 
   if (matches.length === 0) {
@@ -242,15 +244,41 @@ function openCategorySheet() {
     openModal('category-modal');
     return;
   }
-  body.innerHTML = '<div style="padding:14px 16px;border-bottom:1px solid var(--grey-light);cursor:pointer;font-size:15px;font-weight:600;background:' + (selectedCategories.length === 0 ? 'var(--orange-light)' : 'transparent') + ';" onclick="toggleCategoryCheckbox(\'all\', \'All Services\', true)">' +
+  var html = '<div style="padding:14px 16px;border-bottom:1px solid var(--grey-light);cursor:pointer;font-size:15px;font-weight:600;background:' + (selectedCategories.length === 0 ? 'var(--orange-light)' : 'transparent') + ';" onclick="toggleCategoryCheckbox(\'all\', \'All Services\', true)">' +
     '<input type="checkbox" ' + (selectedCategories.length === 0 ? 'checked' : '') + ' style="margin-right:10px;accent-color:var(--orange);">All Services' +
   '</div>';
-  cats.forEach(function(c) {
-    var checked = selectedCategories.some(function(s) { return s.id === c.id; });
-    body.innerHTML += '<div style="padding:10px 16px;border-bottom:1px solid var(--grey-light);font-size:14px;cursor:pointer;" onclick="toggleCategoryCheckbox(\'' + c.id + '\',\'' + c.name.replace(/'/g, "\\'") + '\',' + (!checked) + ')">' +
-      '<input type="checkbox" ' + (checked ? 'checked' : '') + ' style="margin-right:10px;accent-color:var(--orange);" onclick="event.stopPropagation(); toggleCategoryCheckbox(\'' + c.id + '\',\'' + c.name.replace(/'/g, "\\'") + '\',this.checked)">' + c.name +
+
+  function renderItem(cat, level) {
+    var indent = (level - 1) * 16;
+    var checked = selectedCategories.some(function(s) { return s.id === cat.id; });
+    var hasChildren = cat.children && cat.children.length > 0;
+    var safeName = (cat.name || '').replace(/'/g, "\\'");
+    var safeId = (cat.id || '').replace(/'/g, "\\'");
+    var childId = 'cat-ch-' + (cat.slug || cat.id || cat.name).replace(/[^a-z0-9-]/gi, '');
+
+    if (hasChildren) {
+      var rowHtml = '<div style="padding:10px 16px;border-bottom:1px solid var(--grey-light);font-size:14px;cursor:pointer;padding-left:' + (indent + 16) + 'px;display:flex;align-items:center;" onclick="event.stopPropagation();toggleCategoryChildren(\'' + childId + '\')">' +
+        '<input type="checkbox" ' + (checked ? 'checked' : '') + ' style="margin-right:8px;accent-color:var(--orange);" onclick="event.stopPropagation();toggleCategoryCheckbox(\'' + safeId + '\',\'' + safeName + '\',this.checked)">' + cat.name +
+      '</div>';
+      rowHtml += '<div id="' + childId + '" style="display:none;">';
+      cat.children.forEach(function(child) { rowHtml += renderItem(child, level + 1); });
+      rowHtml += '</div>';
+      return rowHtml;
+    }
+
+    return '<div style="padding:10px 16px;border-bottom:1px solid var(--grey-light);font-size:14px;cursor:pointer;padding-left:' + (indent + 16) + 'px;display:flex;align-items:center;" onclick="toggleCategoryCheckbox(\'' + safeId + '\',\'' + safeName + '\',' + (!checked) + ')">' +
+      '<input type="checkbox" ' + (checked ? 'checked' : '') + ' style="margin-right:8px;accent-color:var(--orange);" onclick="event.stopPropagation();toggleCategoryCheckbox(\'' + safeId + '\',\'' + safeName + '\',this.checked)">' + cat.name +
     '</div>';
-  });
+  }
+
+  cats.forEach(function(c) { html += renderItem(c, 1); });
+  body.innerHTML = html;
+  if (window._expandedInterestSubs) {
+    window._expandedInterestSubs.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'block';
+    });
+  }
   openModal('category-modal');
 }
 
@@ -350,6 +378,11 @@ function renderLocationSheet() {
     html += '.loc-arrow { transition: transform 0.2s ease; }';
     html += '</style>';
 
+    html += '<div style="margin:0 16px;border-bottom:1px solid var(--grey-light);"></div>';
+    html += '<div onclick="selectNationWide()" style="padding:14px 16px;cursor:pointer;font-size:15px;display:flex;justify-content:space-between;align-items:center;' + (selectedPlaceA === 'Nation Wide' ? 'background:var(--orange-light);font-weight:600;color:var(--orange);' : '') + '">' +
+      '<span>Nation Wide</span>' +
+      (selectedPlaceA === 'Nation Wide' ? '<span><img src="assets/icons/solid/check-2_orange.webp" style="width:16px;height:16px;"></span>' : '') +
+    '</div>';
     html += '<div style="margin:0 16px;border-bottom:1px solid var(--grey-light);"></div>';
     districts.forEach(function(d) {
       if (!d.towns || d.towns.length === 0) return;

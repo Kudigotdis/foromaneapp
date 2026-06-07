@@ -5,7 +5,7 @@
 const ForomaneDB = {
   db: null,
   DB_NAME: 'foromane-supply-solutions',
-  DB_VERSION: 3,
+  DB_VERSION: 4,
 
   async init() {
     return new Promise((resolve, reject) => {
@@ -60,6 +60,9 @@ const ForomaneDB = {
         }
         if (!db.objectStoreNames.contains('mediaCache')) {
           db.createObjectStore('mediaCache', { keyPath: 'url' });
+        }
+        if (!db.objectStoreNames.contains('packages')) {
+          db.createObjectStore('packages', { keyPath: 'id' });
         }
       };
     });

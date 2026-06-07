@@ -80,9 +80,9 @@ function renderIdentitySection() {
     var sel = s.nationality === item.nationality ? 'selected' : '';
     nationalityOptions += '<option value="' + item.nationality.replace(/"/g,'&quot;') + '" ' + sel + '>' + item.country + ' (' + item.nationality + ')</option>';
   });
-  return `<div class="sub-accordion">
+  return `<div class="sub-accordion" id="acct-identity">
     <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Identity</div>
-    <div class="sub-accordion-body">
+    <div class="sub-accordion-body" id="acct-identity-body">
       <div class="field-row">
         <input type="text" class="field-input" id="id-firstname" placeholder="First Name" value="${(s.firstName||'').replace(/"/g,'&quot;')}" oninput="updateIdentityField('firstName', this.value)">
       </div>
@@ -117,27 +117,27 @@ function renderIdentitySection() {
 function renderLocationSection() {
   var townVal = (UserState.location.town||'Gaborone').replace(/"/g,'&quot;');
   var areaVal = (UserState.location.area||'').replace(/"/g,'&quot;');
-  return `<div class="sub-accordion">
+  return `<div class="sub-accordion" id="acct-location">
     <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Location</div>
-    <div class="sub-accordion-body">
-      <div class="address-stack-row" style="margin-bottom:2px;position:relative;">
+    <div class="sub-accordion-body" id="acct-location-body">
+      <div class="field-row" id="acct-loc-town-row" style="position:relative;">
           <input type="text" class="field-input" id="loc-town" placeholder="Town / Village / City" value="${townVal}" oninput="onTownInput(this.value)" onfocus="showDropdown('loc-town-dropdown')" onblur="setTimeout(function(){hideDropdown('loc-town-dropdown')},180)" autocomplete="off">
           <div class="custom-dropdown" id="loc-town-dropdown"></div>
         <div class="add-entry-btn" id="add-town-container" style="display:none;margin-top:4px;width:100%;" onclick="submitNewTown()">
           <i class="fas fa-plus-circle"></i> Add "<span id="add-town-name"></span>" to database
         </div>
       </div>
-      <div class="address-stack-row" style="margin-bottom:2px;position:relative;">
+      <div class="field-row" id="acct-loc-area-row" style="position:relative;">
           <input type="text" class="field-input" id="loc-area" placeholder="Area / Neighbourhood" value="${areaVal}" oninput="onAreaInput(this.value)" onfocus="showDropdown('loc-area-dropdown')" onblur="setTimeout(function(){hideDropdown('loc-area-dropdown')},180)" autocomplete="off">
           <div class="custom-dropdown" id="loc-area-dropdown"></div>
         <div class="add-entry-btn" id="add-area-container" style="display:none;margin-top:4px;width:100%;" onclick="submitNewArea()">
           <i class="fas fa-plus-circle"></i> Add "<span id="add-area-name"></span>" to database
         </div>
       </div>
-      <div class="address-stack-row" style="margin-bottom:2px;">
+      <div class="field-row" id="acct-loc-gps-row">
         <input type="text" class="field-input" id="loc-gps" placeholder="Google GPS Link" value="${(UserState.location.gps||'').replace(/"/g,'&quot;')}" onchange="updateLocationField('gps', this.value)">
       </div>
-      <div class="address-stack-row">
+      <div class="field-row" id="acct-loc-maps-row">
         <button class="add-entry-btn" onclick="openGpsMap()"><i class="fas fa-map-marked-alt"></i> Open in Google Maps</button>
       </div>
     </div>
@@ -364,9 +364,9 @@ function submitNewArea() {
 }
 
 function renderContactSection() {
-  return `<div class="sub-accordion">
+  return `<div class="sub-accordion" id="acct-contact">
     <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Contact</div>
-    <div class="sub-accordion-body">
+    <div class="sub-accordion-body" id="acct-contact-body">
       ${renderMobileEntries()}
       ${renderWhatsAppEntries()}
       ${renderWhatsAppVerificationSection()}
@@ -392,15 +392,15 @@ function renderSocialSection() {
       <input type="text" class="field-input" id="social_${p.key}" placeholder="${p.placeholder}" value="${(s.contacts.social[p.key]||'').replace(/"/g,'&quot;')}" onchange="updateSocialField('${p.key}', this.value)">
     </div>`
   ).join('');
-  return `<div class="accordion">
-    <div class="accordion-header" onclick="toggleAcc(this)"><span>Social Media</span></div>
-    <div class="accordion-body social-body">${html}</div>
+  return `<div class="sub-accordion" id="acct-social">
+    <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Social Media</div>
+    <div class="sub-accordion-body" id="acct-social-body">${html}</div>
   </div>`;
 }
 
 function renderMobileEntries() {
   const mobiles = UserState.contacts.mobiles;
-  let html = `<div class="sub-accordion"><div class="sub-accordion-header" onclick="toggleSubAcc(this)">Mobile Numbers</div><div class="sub-accordion-body">`;
+  let html = `<div class="sub-accordion" id="acct-mobile"><div class="sub-accordion-header" onclick="toggleSubAcc(this)">Mobile Numbers</div><div class="sub-accordion-body" id="acct-mobile-body">`;
   mobiles.forEach(m => {
     html += `<div class="contact-entry">
       <button class="star-btn ${m.isPrimary?'active':'inactive'}" onclick="setPrimaryMobile('${m.id}')">${m.isPrimary?'★':'☆'}</button>${m.isPrimary?' <span style="font-size:11px;color:var(--orange);font-weight:600;">Main Contact</span>':''}
@@ -416,7 +416,7 @@ function renderMobileEntries() {
 
 function renderWhatsAppEntries() {
   const was = UserState.contacts.whatsapps;
-  let html = `<div class="sub-accordion"><div class="sub-accordion-header" onclick="toggleSubAcc(this)">WhatsApp Numbers</div><div class="sub-accordion-body">`;
+  let html = `<div class="sub-accordion" id="acct-whatsapp"><div class="sub-accordion-header" onclick="toggleSubAcc(this)">WhatsApp Numbers</div><div class="sub-accordion-body" id="acct-whatsapp-body">`;
   was.forEach(w => {
     html += `<div class="contact-entry">
       <button class="star-btn ${w.isPrimary?'active':'inactive'}" onclick="setPrimaryWhatsApp('${w.id}')">${w.isPrimary?'★':'☆'}</button>${w.isPrimary?' <span style="font-size:11px;color:var(--orange);font-weight:600;">Main Contact</span>':''}
@@ -440,7 +440,7 @@ function getPrimaryWhatsAppNumber() {
 function renderWhatsAppVerificationSection() {
   var phone = getPrimaryWhatsAppNumber();
   if (!phone) {
-    return `<div style="padding:12px 0 0;font-size:13px;color:var(--grey-dark);">Add a WhatsApp number to enable WhatsApp sharing features.</div>`;
+    return `<div style="padding:12px 0 0;font-size:16px;color:var(--grey-dark);">Add a WhatsApp number to enable WhatsApp sharing features.</div>`;
   }
   if (UserState.isVerified) {
     return `<div style="padding:12px 0 0;border-top:1px solid #f3f4f6;">
@@ -490,9 +490,9 @@ function renderCategoriesSection() {
   const cats = UserState.interests;
   const count = cats.length;
   const pills = cats.map(c => `<span class="category-pill">${c.replace(/"/g,'&quot;')}</span>`).join('');
-  return `<div class="sub-accordion">
+  return `<div class="sub-accordion" id="acct-categories">
     <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Categories</div>
-    <div class="sub-accordion-body">
+    <div class="sub-accordion-body" id="acct-categories-body">
       <div style="color:var(--orange);font-size:14px;font-weight:600;padding:8px 0 4px;">${count} Selected</div>
       <div class="category-pills">${pills || '<span style="font-size:13px;color:var(--grey-dark);font-style:italic;">No categories selected</span>'}</div>
       <button style="width:100%;margin-top:8px;padding:10px;background:var(--orange);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;" onclick="window._regModeInterests=false;goTo('view-user-interests');renderInterestsPage();">Tap to manage categories</button>
@@ -502,7 +502,6 @@ function renderCategoriesSection() {
 
 function updateIdentityField(key, value) {
   UserState.updateIdentity(key, value);
-  localStorage.setItem('foromane_' + key, value);
   updateAccountHero();
 }
 
@@ -516,7 +515,12 @@ function updateGender(val) {
       b.classList.toggle('active', b.textContent.trim() === val);
     });
   }
-  renderPersonalDetails();
+  var personalBody = document.getElementById('personal-details-body');
+  if (personalBody) {
+    personalBody.querySelectorAll('.gender-btn').forEach(function(b) {
+      b.classList.toggle('active', b.textContent.trim() === val);
+    });
+  }
   updateRegTally();
 }
 
@@ -739,7 +743,7 @@ function renderProAccountSection() {
   const isPro = s.isTradesperson();
   const hasProListing = !!getClaimedProId(s.id);
   return `<div class="sub-accordion">
-    <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Pro Account</div>
+    <div class="sub-accordion-header pro-header" onclick="toggleSubAcc(this)">Pro Account</div>
     <div class="sub-accordion-body">
       <div style="padding:8px 0;">
         ${hasProListing
@@ -1087,8 +1091,8 @@ function addMobileEntry() {
   const m = { id: genId(), title: '', network: 'BTC', countryCode: '+267', number: '', isPrimary: false };
   UserState.addMobile(m);
   renderPersonalDetails();
-  // Re-open the mobile sub-accordion
   document.querySelectorAll('.sub-accordion-header').forEach(h => {
+    if (h.textContent.includes('Contact')) h.parentElement.classList.add('open');
     if (h.textContent.includes('Mobile Numbers')) h.parentElement.classList.add('open');
   });
 }
@@ -1096,12 +1100,20 @@ function addMobileEntry() {
 function removeMobileEntry(id) {
   UserState.removeMobile(id);
   renderPersonalDetails();
+  document.querySelectorAll('.sub-accordion-header').forEach(h => {
+    if (h.textContent.includes('Contact')) h.parentElement.classList.add('open');
+    if (h.textContent.includes('Mobile Numbers')) h.parentElement.classList.add('open');
+  });
   showToast('Removed');
 }
 
 function setPrimaryMobile(id) {
   UserState.setPrimaryMobile(id);
   renderPersonalDetails();
+  document.querySelectorAll('.sub-accordion-header').forEach(h => {
+    if (h.textContent.includes('Contact')) h.parentElement.classList.add('open');
+    if (h.textContent.includes('Mobile Numbers')) h.parentElement.classList.add('open');
+  });
   showToast('Primary updated');
 }
 
@@ -1380,6 +1392,7 @@ function addWhatsAppEntry() {
   UserState.addWhatsApp(w);
   renderPersonalDetails();
   document.querySelectorAll('.sub-accordion-header').forEach(h => {
+    if (h.textContent.includes('Contact')) h.parentElement.classList.add('open');
     if (h.textContent.includes('WhatsApp Numbers')) h.parentElement.classList.add('open');
   });
 }
@@ -1387,12 +1400,20 @@ function addWhatsAppEntry() {
 function removeWhatsAppEntry(id) {
   UserState.removeWhatsApp(id);
   renderPersonalDetails();
+  document.querySelectorAll('.sub-accordion-header').forEach(h => {
+    if (h.textContent.includes('Contact')) h.parentElement.classList.add('open');
+    if (h.textContent.includes('WhatsApp Numbers')) h.parentElement.classList.add('open');
+  });
   showToast('Removed');
 }
 
 function setPrimaryWhatsApp(id) {
   UserState.setPrimaryWhatsApp(id);
   renderPersonalDetails();
+  document.querySelectorAll('.sub-accordion-header').forEach(h => {
+    if (h.textContent.includes('Contact')) h.parentElement.classList.add('open');
+    if (h.textContent.includes('WhatsApp Numbers')) h.parentElement.classList.add('open');
+  });
   showToast('Primary updated');
 }
 
@@ -1761,6 +1782,12 @@ function renderEditModeInterests(body, data) {
 
   data.categories.forEach(cat => { html += renderItem(cat, 1); });
   body.innerHTML = html;
+  if (window._expandedInterestSubs) {
+    window._expandedInterestSubs.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'block';
+    });
+  }
 }
 
 function toggleInterestCheckbox(name, checked) {
@@ -1799,7 +1826,15 @@ function toggleAllInterests() {
 
 function toggleCategoryChildren(id) {
   const el = document.getElementById(id);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el) {
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    if (!window._expandedInterestSubs) window._expandedInterestSubs = new Set();
+    if (el.style.display === 'block') {
+      window._expandedInterestSubs.add(id);
+    } else {
+      window._expandedInterestSubs.delete(id);
+    }
+  }
 }
 
 function saveInterestsFromPage() {
@@ -1871,11 +1906,9 @@ function updateAccountHero() {
 
   var hero = document.querySelector('.profile-hero');
   var chevron = hero ? hero.querySelector('.chevron') : null;
-  var body = document.getElementById('personal-details-body');
   if (isGuest) {
     if (hero) hero.onclick = null;
     if (chevron) chevron.style.display = 'none';
-    if (body) body.classList.remove('open');
   } else {
     if (hero) hero.onclick = function() { toggleAcc(this); renderPersonalDetails(); };
     if (chevron) chevron.style.display = '';
@@ -2154,6 +2187,7 @@ function logoutUser() {
   document.getElementById('view-welcome')?.classList.add('active');
   if (typeof manageUI === 'function') manageUI('view-welcome');
   if (window.updateAccountUI) updateAccountUI();
+  window._appEntered = false;
 }
 
 async function switchTo(id) {

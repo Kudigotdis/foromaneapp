@@ -146,7 +146,7 @@ var ONBOARDING_STEPS = [
 ];
 
 function showOnboarding() {
-  if (localStorage.getItem('foromane_onboarding_done')) return;
+  if (localStorage.getItem('foromane_onboard_done')) return;
   _onboardingStep = 0;
   renderOnboardingStep();
   openModal('onboarding-modal');
@@ -179,7 +179,7 @@ function nextOnboardingStep() {
 }
 
 function closeOnboarding() {
-  localStorage.setItem('foromane_onboarding_done', '1');
+  localStorage.setItem('foromane_onboard_done', '1');
   closeModal('onboarding-modal');
 }
 

@@ -324,7 +324,7 @@ function renderDirectory() {
   businesses.sort((a, b) => a.name.localeCompare(b.name));
 
   // ── Virtual scroller: build layout, render visible slice ──
-  const HEADER_H = 36;
+  const HEADER_H = 39;
   const CARD_H = 84;
   var letterGroups = {};
   businesses.forEach(function(b) {
@@ -357,15 +357,6 @@ function renderDirectory() {
 
   // Inner container sizing
   el.style.cssText = 'position:relative;height:' + _dirTotalH + 'px;padding:0;';
-
-  // Floating sticky header
-  var fh = document.getElementById('dir-floating-header');
-  if (!fh) {
-    fh = document.createElement('div');
-    fh.id = 'dir-floating-header';
-    fh.style.cssText = 'position:sticky;top:0;z-index:3;padding:8px 16px 4px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--orange);background:var(--bg);display:none;';
-    scroller.insertBefore(fh, el);
-  }
 
   // Scroll handler
   scroller.onscroll = _onDirScroll;
@@ -407,27 +398,12 @@ function _onDirScroll() {
   for (var i = si; i < ei; i++) {
     var r = rows[i];
     if (r.type === 'header') {
-      html += '<div style="position:absolute;top:' + r.top + 'px;left:0;right:0;height:' + r.height + 'px;padding:8px 16px 4px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--orange);background:var(--bg);z-index:2;">' + r.letter + '</div>';
+      html += '<div id="dir-header-' + r.letter + '" style="position:absolute;top:' + r.top + 'px;left:0;right:0;height:' + r.height + 'px;padding:8px 16px 4px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--orange);background:rgba(128,128,128,0.10);background-clip:padding-box;z-index:2;border-bottom:7px solid transparent;">' + r.letter + '</div>';
     } else {
       html += _vsCardHtml(r.biz, r.top, r.height);
     }
   }
   el.innerHTML = html;
-
-  // Update floating header
-  var fh = document.getElementById('dir-floating-header');
-  if (!fh) return;
-  var topIdx = lo;
-  var headerIdx = -1;
-  for (var j = topIdx; j >= 0; j--) {
-    if (rows[j].type === 'header') { headerIdx = j; break; }
-  }
-  if (headerIdx >= 0) {
-    fh.textContent = rows[headerIdx].letter;
-    fh.style.display = '';
-  } else {
-    fh.style.display = 'none';
-  }
 }
 
 function _vsCardHtml(b, top, height) {
@@ -1004,18 +980,18 @@ function openBizPromos(bizId, businessName) {
           '<div class="promo-details" onclick="toggleBizPromo(\'' + p.id + '\')">' +
             '<div class="promo-supplier" onclick="event.stopPropagation();goBack()">' +
               (bizLogo
-                ? '<img src="' + bizLogo + '" class="avatar-square" style="object-fit:cover;" alt="" loading="lazy" width="48" height="48">'
+                ? '<img src="' + bizLogo + '" class="avatar-square" style="object-fit:cover;" alt="" loading="lazy">'
                 : '<div class="avatar-square" style="background:' + (p.businessColor || '#999') + ';">' + (p.businessInit || '?') + '</div>') +
               '<div>' +
-                '<div style="font-size:14px;">' + (p.businessName || businessName) + '</div>' +
-                '<div style="font-size:11px;color:var(--grey-dark);font-weight:400;">' + (p.location || (biz ? biz.location : '')) + '</div>' +
+                '<div style="font-size:16px;" id="promo-biz-name-' + p.id + '">' + (p.businessName || businessName) + '</div>' +
+                '<div style="font-size:13px;color:var(--grey-dark);font-weight:400;" id="promo-biz-loc-' + p.id + '">' + formatPromoLocation(p.location || (biz ? biz.location : '')) + '</div>' +
               '</div>' +
             '</div>' +
             (isOwner ? '<div style="font-size:10px;color:var(--orange);font-weight:600;margin-bottom:4px;">Your Promo</div>' : '') +
             '<div class="promo-title">' + p.title + '</div>' +
             '<div class="promo-desc">' + (p.desc || '') + '</div>' +
             '<div class="qty-row">' +
-              '<div class="qty-price">P <span class="cp">' + ((p.basePrice || p.price || 0) * (p.qty || 1)).toFixed(2) + '</span> <span style="font-size:12px;font-weight:400;color:var(--orange);">' + (p.unit || 'each') + '</span></div>' +
+              '<div class="qty-price"><div>P <span class="cp">' + ((p.basePrice || p.price || 0) * (p.qty || 1)).toFixed(2) + '</span></div><div style="font-size:12px;font-weight:400;color:var(--orange);margin-top:2px;">' + (p.unit || 'each') + '</div></div>' +
               '<div class="qty-controls">' +
                 '<button class="qty-btn" onclick="event.stopPropagation();changeQty(\'' + p.id + '\',-1,' + (p.basePrice || p.price || 0) + ',this)">\u2212</button>' +
                 '<span class="qv" style="min-width:20px;text-align:center;font-weight:600;">' + (p.qty || 1) + '</span>' +
@@ -1293,11 +1269,11 @@ function selectBizBrand(brandName) {
         '<div class="promo-details" onclick="toggleBizPromo(\'' + it.id + '\')">' +
           '<div class="promo-supplier" onclick="event.stopPropagation();goBack()">' +
             (bizLogo2
-              ? '<img src="' + bizLogo2 + '" class="avatar-square" style="object-fit:cover;" alt="" loading="lazy" width="48" height="48">'
+              ? '<img src="' + bizLogo2 + '" class="avatar-square" style="object-fit:cover;" alt="" loading="lazy">'
               : '<div class="avatar-square" style="background:' + (state.color || '#999') + ';">' + (state.init || '?') + '</div>') +
             '<div>' +
-              '<div style="font-size:14px;">' + (state.businessName || '') + '</div>' +
-              '<div style="font-size:11px;color:var(--grey-dark);font-weight:400;">' + (state.location || '') + '</div>' +
+              '<div style="font-size:16px;" id="promo-biz-name-' + it.id + '">' + (state.businessName || '') + '</div>' +
+              '<div style="font-size:13px;color:var(--grey-dark);font-weight:400;" id="promo-biz-loc-' + it.id + '">' + formatPromoLocation(state.location || '') + '</div>' +
             '</div>' +
           '</div>' +
           (isMyItem ? '<div style="font-size:10px;color:var(--orange);font-weight:600;margin-bottom:4px;">Your Item</div>' : '') +
@@ -1305,7 +1281,7 @@ function selectBizBrand(brandName) {
           (it.brand ? '<div class="promo-brand"><i class="fas fa-tag" style="margin-right:4px;font-size:11px;"></i>' + it.brand + '</div>' : '') +
           '<div class="promo-desc">' + (it.desc || '') + '</div>' +
           '<div class="qty-row">' +
-            '<div class="qty-price">P <span class="cp">' + (price * (it.qty || 1)).toFixed(2) + '</span> <span style="font-size:12px;font-weight:400;color:var(--orange);">' + unit + '</span></div>' +
+            '<div class="qty-price"><div>P <span class="cp">' + (price * (it.qty || 1)).toFixed(2) + '</span></div><div style="font-size:12px;font-weight:400;color:var(--orange);margin-top:2px;">' + unit + '</div></div>' +
             '<div class="qty-controls">' +
               '<button class="qty-btn" onclick="event.stopPropagation();changeQty(\'' + it.id + '\',-1,' + price + ',this)">\u2212</button>' +
               '<span class="qv" style="min-width:20px;text-align:center;font-weight:600;">' + (it.qty || 1) + '</span>' +
@@ -1426,17 +1402,22 @@ function _buildDirCardDropdownHtml(bizId, name, phone, location, isPro, isUserBi
 function toggleDirDropdown(id) {
   var el = document.getElementById(id);
   if (!el) return;
+  var group = el.closest('.dir-card-group');
   if (el.classList.contains('open')) {
     el.classList.remove('open');
+    if (group) { group.style.zIndex = ''; group.style.overflow = ''; }
   } else {
     closeDirDropdowns();
     el.classList.add('open');
+    if (group) { group.style.zIndex = '5'; group.style.overflow = 'visible'; }
   }
 }
 
 function closeDirDropdowns() {
   document.querySelectorAll('.dropdown-actions-container.open').forEach(function(el) {
     el.classList.remove('open');
+    var group = el.closest('.dir-card-group');
+    if (group) { group.style.zIndex = ''; group.style.overflow = ''; }
   });
 }
 
@@ -1647,11 +1628,11 @@ function renderCatalogueListedItems(selectedCat) {
           '<div class="promo-details" onclick="toggleBizPromo(\'' + it.id + '\')">' +
             '<div class="promo-supplier" onclick="event.stopPropagation();goBack()">' +
               (bizLogo
-                ? '<img src="' + bizLogo + '" class="avatar-square" style="object-fit:cover;" alt="" loading="lazy" width="48" height="48">'
+                ? '<img src="' + bizLogo + '" class="avatar-square" style="object-fit:cover;" alt="" loading="lazy">'
                 : '<div class="avatar-square" style="background:' + (state.color || '#999') + ';">' + (state.init || '?') + '</div>') +
               '<div>' +
-                '<div style="font-size:14px;">' + (state.businessName || '') + '</div>' +
-                '<div style="font-size:11px;color:var(--grey-dark);font-weight:400;">' + (state.location || '') + '</div>' +
+                '<div style="font-size:16px;" id="promo-biz-name-' + it.id + '">' + (state.businessName || '') + '</div>' +
+                '<div style="font-size:13px;color:var(--grey-dark);font-weight:400;" id="promo-biz-loc-' + it.id + '">' + formatPromoLocation(state.location || '') + '</div>' +
               '</div>' +
             '</div>' +
             (isMyItem ? '<div style="font-size:10px;color:var(--orange);font-weight:600;margin-bottom:4px;">Your Item</div>' : '') +
@@ -1659,7 +1640,7 @@ function renderCatalogueListedItems(selectedCat) {
             (it.brand ? '<div class="promo-brand"><i class="fas fa-tag" style="margin-right:4px;font-size:11px;"></i>' + it.brand + '</div>' : '') +
             '<div class="promo-desc">' + (it.desc || '') + '</div>' +
             '<div class="qty-row">' +
-              '<div class="qty-price">P <span class="cp">' + (price * (it.qty || 1)).toFixed(2) + '</span> <span style="font-size:12px;font-weight:400;color:var(--orange);">' + unit + '</span></div>' +
+              '<div class="qty-price"><div>P <span class="cp">' + (price * (it.qty || 1)).toFixed(2) + '</span></div><div style="font-size:12px;font-weight:400;color:var(--orange);margin-top:2px;">' + unit + '</div></div>' +
               '<div class="qty-controls">' +
                 '<button class="qty-btn" onclick="event.stopPropagation();changeQty(\'' + it.id + '\',-1,' + price + ',this)">\u2212</button>' +
                 '<span class="qv" style="min-width:20px;text-align:center;font-weight:600;">' + (it.qty || 1) + '</span>' +
@@ -1912,3 +1893,32 @@ function switchRetailHoursBranch(val) {
   if (target) target.style.display = 'block';
 }
 window.switchRetailHoursBranch = switchRetailHoursBranch;
+
+// ── A-Z INDEX POPUP ──
+function openAzIndex() {
+  var popup = document.getElementById('az-popup');
+  var body = document.getElementById('az-popup-body');
+  if (!popup || !body) return;
+  var letters = [];
+  for (var i = 65; i <= 90; i++) letters.push(String.fromCharCode(i));
+  letters.push('#');
+  body.innerHTML = '<div class="az-grid">' +
+    letters.map(function(l) {
+      return '<button class="az-grid-btn" onclick="selectAzLetter(\'' + l + '\')">' + l + '</button>';
+    }).join('') + '</div>';
+  popup.style.display = 'flex';
+}
+function closeAzIndex() {
+  var popup = document.getElementById('az-popup');
+  if (popup) popup.style.display = 'none';
+}
+function selectAzLetter(letter) {
+  closeAzIndex();
+  goTo('view-directory');
+  var tab = document.getElementById('nav-directory');
+  if (tab) tab.click();
+  setTimeout(function() { scrollToAlpha(letter); }, 200);
+}
+window.openAzIndex = openAzIndex;
+window.closeAzIndex = closeAzIndex;
+window.selectAzLetter = selectAzLetter;

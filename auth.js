@@ -89,20 +89,22 @@ const Auth = {
   },
 
   async loginAsGuest() {
-    const account = window.DEMO_ACCOUNTS.find(a => a.id === 'guest');
-    if (!account) return;
-    UserState.set(account.id, account.name, account.role, '', account.town, '');
-    localStorage.setItem('foromane_userId', account.id);
-    UserState.business = null;
-    UserState.kpi = { ads: 0, views: 0, likes: 0, noteAdds: 0 };
-    UserState.interests = [];
-    enterApp();
-    renderPromos();
-    updateAccountHero();
-    resetBusinessCard();
-    updateKPI();
-    updateAccountUI();
-    reloadNotesForUser();
+    try {
+      const account = window.DEMO_ACCOUNTS.find(a => a.id === 'guest');
+      if (!account) return;
+      UserState.set(account.id, account.name, account.role, '', account.town, '');
+      localStorage.setItem('foromane_userId', account.id);
+      UserState.business = null;
+      UserState.kpi = { ads: 0, views: 0, likes: 0, noteAdds: 0 };
+      UserState.interests = [];
+      enterApp();
+      renderPromos();
+      updateAccountHero();
+      resetBusinessCard();
+      updateKPI();
+      updateAccountUI();
+      reloadNotesForUser();
+    } catch(e) { console.error('loginAsGuest failed:', e); }
   },
 
   async loginWithCredential() {
@@ -123,7 +125,7 @@ const Auth = {
     errorEl.style.display = 'none';
 
     if (!credential || !password) {
-      errorEl.textContent = 'Please enter your WhatsApp number or username and password.';
+      errorEl.textContent = 'Please enter your username and password.';
       return;
     }
 
@@ -563,73 +565,73 @@ const Auth = {
   },
 
   async switchToProfile(profile) {
-    // Check user status before allowing login
-    if (profile.status === 'suspended' || profile.status === 'banned') {
-      showToast('Account ' + profile.status + '. Contact support for assistance.');
-      return;
-    }
-    UserState.status = profile.status || 'active';
-    localStorage.setItem('foromane_status', UserState.status);
-    UserState.set(profile.id, profile.name, profile.role, '', profile.town, profile.phone || '');
-    UserState.firstName = profile.firstName || '';
-    UserState.surname = profile.surname || '';
-    UserState.username = profile.username || '';
-    UserState.dateOfBirth = profile.dateOfBirth || '';
-    UserState.gender = profile.gender || '';
-    UserState.nationality = profile.nationality || '';
-    UserState.race = profile.race || '';
-    UserState.contacts = profile.contacts || { mobiles:[], whatsapps:[], social:{} };
-    UserState.location = profile.location || { town: profile.town || '', area: '' };
-    UserState.interests = profile.interests || [];
-    UserState.setVerified(!!profile.verified);
-    localStorage.setItem('foromane_userId', profile.id);
-    if (profile.photo) localStorage.setItem('foromane_photo', profile.photo);
-    localStorage.setItem('foromane_username', UserState.username);
-    localStorage.setItem('foromane_dob', UserState.dateOfBirth);
-    localStorage.setItem('foromane_gender', UserState.gender);
-    localStorage.setItem('foromane_nationality', UserState.nationality);
-    localStorage.setItem('foromane_race', UserState.race);
-    UserState._persistContacts();
-    UserState._persistLocation();
-    UserState._persistInterests();
-    UserState.pendingSync = !!profile.pendingSync;
-    UserState.localOnly = !!profile.localOnly;
-    UserState.syncStatus = profile.syncStatus || '';
-    UserState.syncError = profile.syncError || '';
-    UserState.conflictType = profile.conflictType || '';
-    UserState.conflictValue = profile.conflictValue || '';
-    UserState.conflictExistingProfileId = profile.conflictExistingProfileId || '';
-
-    UserState.kpi = { ads: 0, views: 0, likes: 0, noteAdds: 0 };
-    UserState.business = null;
-
-    if (typeof window.fetchUserBusiness === 'function') {
-      try {
-        var businessProfile = await window.fetchUserBusiness(profile.id);
-        if (businessProfile) {
-          UserState.business = businessProfile;
-        }
-      } catch (e) {
-        console.warn('Failed to load user business profile:', e);
-      }
-    }
-
-    // If Drive is signed in, ensure Drive folders exist
     try {
-      if (window.DriveAPI && typeof window.DriveAPI.isSignedIn === 'function' && window.DriveAPI.isSignedIn()) {
-        window.DriveAPI.ensureUserFolder(profile.id).catch(function(e) {
-          console.warn('Failed to ensure Drive user folder:', e);
-        });
+      if (profile.status === 'suspended' || profile.status === 'banned') {
+        showToast('Account ' + profile.status + '. Contact support for assistance.');
+        return;
       }
-    } catch(e) { console.warn('Drive folder error:', e); }
+      UserState.status = profile.status || 'active';
+      localStorage.setItem('foromane_status', UserState.status);
+      UserState.set(profile.id, profile.name, profile.role, '', profile.town, profile.phone || '');
+      UserState.firstName = profile.firstName || '';
+      UserState.surname = profile.surname || '';
+      UserState.username = profile.username || '';
+      UserState.dateOfBirth = profile.dateOfBirth || '';
+      UserState.gender = profile.gender || '';
+      UserState.nationality = profile.nationality || '';
+      UserState.race = profile.race || '';
+      UserState.contacts = profile.contacts || { mobiles:[], whatsapps:[], social:{} };
+      UserState.location = profile.location || { town: profile.town || '', area: '' };
+      UserState.interests = profile.interests || [];
+      UserState.setVerified(!!profile.verified);
+      localStorage.setItem('foromane_userId', profile.id);
+      if (profile.photo) localStorage.setItem('foromane_photo', profile.photo);
+      localStorage.setItem('foromane_username', UserState.username);
+      localStorage.setItem('foromane_dob', UserState.dateOfBirth);
+      localStorage.setItem('foromane_gender', UserState.gender);
+      localStorage.setItem('foromane_nationality', UserState.nationality);
+      localStorage.setItem('foromane_race', UserState.race);
+      UserState._persistContacts();
+      UserState._persistLocation();
+      UserState._persistInterests();
+      UserState.pendingSync = !!profile.pendingSync;
+      UserState.localOnly = !!profile.localOnly;
+      UserState.syncStatus = profile.syncStatus || '';
+      UserState.syncError = profile.syncError || '';
+      UserState.conflictType = profile.conflictType || '';
+      UserState.conflictValue = profile.conflictValue || '';
+      UserState.conflictExistingProfileId = profile.conflictExistingProfileId || '';
 
-    enterApp();
-    renderPromos();
-    updateAccountHero();
-    resetBusinessCard();
-    updateKPI();
-    updateAccountUI();
-    reloadNotesForUser();
+      UserState.kpi = { ads: 0, views: 0, likes: 0, noteAdds: 0 };
+      UserState.business = null;
+
+      if (typeof window.fetchUserBusiness === 'function') {
+        try {
+          var businessProfile = await window.fetchUserBusiness(profile.id);
+          if (businessProfile) {
+            UserState.business = businessProfile;
+          }
+        } catch (e) {
+          console.warn('Failed to load user business profile:', e);
+        }
+      }
+
+      try {
+        if (window.DriveAPI && typeof window.DriveAPI.isSignedIn === 'function' && window.DriveAPI.isSignedIn()) {
+          window.DriveAPI.ensureUserFolder(profile.id).catch(function(e) {
+            console.warn('Failed to ensure Drive user folder:', e);
+          });
+        }
+      } catch(e) { console.warn('Drive folder error:', e); }
+
+      enterApp();
+      renderPromos();
+      updateAccountHero();
+      resetBusinessCard();
+      updateKPI();
+      updateAccountUI();
+      reloadNotesForUser();
+    } catch(e) { console.error('switchToProfile failed:', e); }
   },
 
   async adminLogin() {

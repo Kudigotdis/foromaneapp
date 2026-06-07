@@ -312,7 +312,7 @@ async function downloadPackage(type) {
 async function deletePackage(type) {
   if (!window.ForomaneDB || !window.ForomaneDB.db) return;
   try {
-    await ForomaneDB.del('packages', 'foromane_' + type + '_package');
+    await ForomaneDB.delete('packages', 'foromane_' + type + '_package');
     showToast('Package deleted');
     openDataModeModal();
   } catch(e) { console.error('Failed to delete package:', e); }

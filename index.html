@@ -398,7 +398,7 @@
     <div class="onboard-footer">
       <button class="onboard-btn onboard-btn-muted" onclick="skipOnboard()">Skip</button>
       <div style="display:flex;gap:8px;">
-        <button class="onboard-btn" id="onboard-prev" onclick="onboardPrev()" style="display:none;">← Back</button>
+        <button class="onboard-btn" id="onboard-prev" onclick="onboardPrev()" style="display:none;text-decoration:none;">Back</button>
         <button class="onboard-btn onboard-btn-primary" id="onboard-next" onclick="onboardNext()">Next</button>
       </div>
     </div>
@@ -580,7 +580,7 @@
         </button>
         <div class="bottom-bar-actions">
           <img src="assets/icons/solid/share-nodes_whatsapp_green.webp" class="icon-action" alt="Share" onclick="shareNoteWhatsApp()">
-          <img src="assets/icons/solid/delete_icon_orange.webp" class="icon-action" alt="Delete" onclick="deleteCurrentNote()">
+          <button class="btn-round" onclick="deleteCurrentNote()"><img src="assets/icons/solid/delete_icon_orange.webp" class="icon-action" alt="Delete"></button>
         </div>
       </div>
     </div>
@@ -868,9 +868,9 @@
       <div style="padding:16px;">
 
         <!-- Identity -->
-        <div class="sub-accordion">
+        <div class="sub-accordion" id="reg-identity">
           <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Identity</div>
-          <div class="sub-accordion-body">
+          <div class="sub-accordion-body" id="reg-identity-body">
             <div class="field-row" style="display:flex;flex-direction:column;align-items:center;">
               <div class="profile-photo-upload" onclick="document.getElementById('reg-photo-input').click()">
                 <img id="reg-photo-preview" src="" style="width:100%;height:100%;border-radius:12px;object-fit:cover;display:none;">
@@ -937,14 +937,14 @@
         </div>
 
         <!-- Contact -->
-        <div class="sub-accordion">
+        <div class="sub-accordion" id="reg-contact">
           <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Contact</div>
-          <div class="sub-accordion-body">
-            <div class="sub-accordion">
+          <div class="sub-accordion-body" id="reg-contact-body">
+            <div class="sub-accordion" id="reg-mobile-accordion">
               <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Mobile Contact</div>
               <div class="sub-accordion-body" id="reg-mobile-entries"></div>
             </div>
-            <div class="sub-accordion">
+            <div class="sub-accordion" id="reg-whatsapp-accordion">
               <div class="sub-accordion-header" onclick="toggleSubAcc(this)">WhatsApp Contact</div>
               <div class="sub-accordion-body" id="reg-whatsapp-entries"></div>
             </div>
@@ -955,17 +955,17 @@
         </div>
 
         <!-- Location -->
-        <div class="sub-accordion" style="overflow:visible;">
+        <div class="sub-accordion" id="reg-location" style="overflow:visible;">
           <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Location</div>
-          <div class="sub-accordion-body">
-            <div class="field-row address-stack-row">
+          <div class="sub-accordion-body" id="reg-location-body">
+            <div class="field-row" id="reg-loc-country-row">
               <select class="field-input" id="loc-country" onchange="onCountryChange(this.value)">
                 <option value="" disabled selected>Select Country</option>
                 <option value="botswana">Botswana</option>
                 <option value="zimbabwe">Zimbabwe</option>
               </select>
             </div>
-            <div class="field-row address-stack-row" style="position:relative;">
+            <div class="field-row" id="reg-loc-town-row" style="position:relative;">
               <input type="text" class="field-input" id="loc-town"
                 placeholder="Village / Town / City" autocomplete="off"
                 oninput="onTownInput(this.value)" onchange="onTownChange(this.value)"
@@ -978,7 +978,7 @@
                 <i class="fas fa-plus-circle"></i> Add "<span id="add-town-name"></span>" to database
               </button>
             </div>
-            <div class="field-row address-stack-row" style="position:relative;">
+            <div class="field-row" id="reg-loc-area-row" style="position:relative;">
               <input type="text" class="field-input" id="loc-area"
                 placeholder="Area / Neighbourhood" autocomplete="off"
                 oninput="onAreaInput(this.value)" onchange="onAreaChange(this.value)"
@@ -995,9 +995,9 @@
         </div>
 
         <!-- Social Media -->
-        <div class="sub-accordion">
+        <div class="sub-accordion" id="reg-social">
           <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Social Media</div>
-          <div class="sub-accordion-body">
+          <div class="sub-accordion-body" id="reg-social-body">
             <div class="field-row"><input type="text" class="field-input" id="social_facebook" placeholder="Facebook (username or URL)" value="" onchange="updateSocialField('facebook', this.value)"></div>
             <div class="field-row"><input type="text" class="field-input" id="social_twitter" placeholder="Twitter / X" value="" onchange="updateSocialField('twitter', this.value)"></div>
             <div class="field-row"><input type="text" class="field-input" id="social_instagram" placeholder="Instagram" value="" onchange="updateSocialField('instagram', this.value)"></div>
@@ -1011,9 +1011,9 @@
         </div>
 
         <!-- Account Security -->
-        <div class="sub-accordion">
+        <div class="sub-accordion" id="reg-account">
           <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Account</div>
-          <div class="sub-accordion-body">
+          <div class="sub-accordion-body" id="reg-account-body">
             <div class="field-row" style="position:relative;">
               <input type="password" class="field-input" id="reg-password" placeholder="Create a password (min 6 chars)" autocomplete="new-password">
               <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('reg-password',this)" tabindex="-1" aria-label="Toggle password visibility"><i class="fas fa-eye"></i></button>
@@ -1026,9 +1026,9 @@
         </div>
 
         <!-- Categories -->
-        <div class="sub-accordion">
+        <div class="sub-accordion" id="reg-categories">
           <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Categories</div>
-          <div class="sub-accordion-body">
+          <div class="sub-accordion-body" id="reg-categories-body">
             <div style="color:var(--orange);font-size:14px;font-weight:600;padding:8px 0 4px;">0 Selected</div>
             <div class="category-pills"></div>
             <button style="width:100%;margin-top:8px;padding:10px;background:var(--orange);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;" onclick="window._regModeInterests=true;goTo('view-user-interests');renderInterestsPage();">Tap to manage categories</button>
@@ -1040,51 +1040,54 @@
         <p style="text-align:center;margin-top:16px;font-size:15px;color:var(--grey-dark);">
           Already have an account? <a href="#" onclick="event.preventDefault();goTo('view-login');" style="color:var(--orange);font-weight:600;">Sign In</a>
         </p>
+        <p style="text-align:center;margin-top:8px;font-size:15px;color:var(--grey-dark);">
+          <a href="#" onclick="event.preventDefault();Auth.loginAsGuest();" style="color:var(--grey-dark);font-weight:600;">Continue as Guest</a>
+        </p>
 
       </div>
     </div>
 
     <!-- ═══ LOGIN PAGE ═══ -->
     <div id="view-login" class="view" style="padding:0;">
-      <div style="padding:12px 16px;display:flex;align-items:center;border-bottom:1px solid var(--grey-light);position:sticky;top:0;background:var(--white);z-index:1;">
+      <div id="login-header" style="padding:12px 16px;display:flex;align-items:center;border-bottom:1px solid var(--grey-light);position:sticky;top:0;background:var(--white);z-index:1;">
         <span style="font-family:var(--font-head);font-size:20px;font-weight:700;">Login</span>
       </div>
-      <div style="padding:16px;">
+      <div id="login-content" style="padding:16px;">
+
+        <div style="text-align:center;margin-bottom:20px;">
+          <img src="assets/images/company_logos_dummy/Foromane Logo_colour_No_Background.webp" alt="Foromane" style="max-width:180px;height:auto;display:inline-block;">
+        </div>
 
         <div id="login-form-fields">
-          <label for="login-username">WhatsApp or Username</label>
-          <input type="text" id="login-username" placeholder="Enter your WhatsApp number or username" autocomplete="username">
-          <label for="login-whatsapp">WhatsApp Number (required if logging in with username)</label>
-          <input type="tel" id="login-whatsapp" placeholder="+267 71 234 567" autocomplete="tel">
-          <label for="login-password">Password</label>
+          <input type="text" id="login-username" placeholder="User Name" autocomplete="username">
+          <input type="tel" id="login-whatsapp" placeholder="WhatsApp Number" autocomplete="tel">
           <div style="position:relative;">
             <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();Auth.loginWithCredential();}" style="width:100%;padding-right:36px;box-sizing:border-box;">
             <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('login-password',this)" tabindex="-1" aria-label="Toggle password visibility"><i class="fas fa-eye"></i></button>
           </div>
           <div id="login-error" style="color:#c00;font-size:12px;margin-bottom:8px;display:none;"></div>
           <button class="btn" onclick="Auth.loginWithCredential()">Sign In</button>
-          <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--grey-dark);">
+          <p style="text-align:center;margin-top:12px;font-size:26px;color:var(--grey-dark);">
             <a href="#" onclick="event.preventDefault();goTo('view-register');initRegisterView();" style="color:var(--orange);">Create an account</a>
           </p>
-          <p style="text-align:center;margin-top:8px;font-size:12px;color:var(--grey-mid);">
-            <a href="#" onclick="event.preventDefault();window.browseAsGuest();" style="color:var(--grey-dark);">Continue as Guest</a>
+          <p style="text-align:center;margin-top:8px;font-size:24px;color:var(--grey-mid);">
+            <a href="#" onclick="event.preventDefault();Auth.loginAsGuest();" style="color:var(--grey-dark);font-weight:600;">Continue as Guest</a>
           </p>
-          <p style="text-align:center;margin-top:6px;font-size:12px;">
+          <p style="text-align:center;margin-top:6px;font-size:24px;">
             <a href="#" onclick="event.preventDefault();Auth.showForgotPassword();" style="color:var(--grey-dark);">Forgot password?</a>
           </p>
         </div>
 
         <div id="forgot-password-section" style="display:none;">
-          <p style="font-size:14px;font-weight:600;margin-bottom:4px;">Forgot Password</p>
-          <p style="font-size:12px;color:var(--grey-dark);margin-bottom:12px;">Enter your registered email and we'll send a password reset link.</p>
-          <label for="forgot-email">Email</label>
+          <p style="font-size:28px;font-weight:600;margin-bottom:4px;">Forgot Password</p>
+          <p style="font-size:24px;color:var(--grey-dark);margin-bottom:12px;">Enter your registered email and we'll send a password reset link.</p>
           <input type="email" id="forgot-email" placeholder="email@example.com">
           <div id="forgot-result" style="color:#c00;font-size:12px;margin-bottom:8px;display:none;"></div>
           <button class="btn" onclick="Auth.retrievePassword()">Retrieve Password</button>
-          <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--grey-dark);">
+          <p style="text-align:center;margin-top:12px;font-size:24px;color:var(--grey-dark);">
             <a href="#" onclick="event.preventDefault();Auth.hideForgotPassword();" style="color:var(--orange);">Back to Login</a>
           </p>
-          <p style="text-align:center;margin-top:8px;font-size:11px;color:var(--grey-dark);">
+          <p style="text-align:center;margin-top:8px;font-size:22px;color:var(--grey-dark);">
             Can't access your email? Contact us on WhatsApp <a href="https://wa.me/26771829765" target="_blank" style="color:var(--orange);font-weight:600;">+267 71829765</a>
           </p>
         </div>
@@ -1118,22 +1121,19 @@
         <div class="pill active" onclick="setSearchMode('all')">All</div>
         <div class="pill" onclick="setSearchMode('brand')">Brands List</div>
         <div class="pill" onclick="setSearchMode('business')">Find Supplier</div>
-        <div class="pill" onclick="setSearchMode('az')">Suppliers A-Z</div>
       </div>
       <input type="text" id="search-input" class="search-input" placeholder="Search by name, brand, or store..." oninput="doSearch(this.value)">
       <div id="search-results" class="search-body"></div>
       <div class="search-price-filter">
         <div class="price-filter-row">
           <div class="price-filter-field">
-            <label for="price-min">Min Price</label>
             <input type="number" id="price-min" placeholder="e.g. 0">
           </div>
           <div class="price-filter-field">
-            <label for="price-max">Max Price</label>
             <input type="number" id="price-max" placeholder="e.g. 5000">
           </div>
         </div>
-        <div style="display:flex;gap:8px;">
+        <div id="price-filter-actions" style="display:flex;gap:8px;">
           <button class="btn" style="flex:1;" onclick="confirmPriceFilter()">Confirm Filter</button>
           <button class="btn btn-outline" style="flex:1;" onclick="clearPriceFilter()">Clear</button>
         </div>
@@ -1143,13 +1143,14 @@
   </main>
 
   <!-- ── FILTER BAR ── -->
-  <div id="filter-bar" style="display:none;">
+  <div id="filter-bar" style="display:none; font-size:16px;">
     <div class="filter-row" id="promo-type-row" style="justify-content:space-between; padding:6px 16px; background:#ffe2d4;">
       <button class="filter-btn" id="promo-type-btn" onclick="openPromoTypeModal()" style="color:#be5900;">Buy New</button>
       <span id="data-mode-label" style="font-size:16px;font-weight:600;color:#be5900;cursor:pointer;" onclick="openDataModeModal()">Live</span>
     </div>
-    <div class="filter-row" id="business-type-filter-row" style="justify-content:center; padding:6px 16px; background:#ffe2d4; display:none;">
+    <div class="filter-row" id="business-type-filter-row" style="justify-content:space-between; padding:6px 16px; background:#ffe2d4; display:none;">
       <button class="filter-btn" id="dir-type-btn" onclick="openDirTypeModal()" style="color:#be5900;">Suppliers</button>
+      <button class="filter-btn" id="az-index-btn" onclick="openAzIndex()" style="color:#be5900;">A-Z</button>
     </div>
     <div class="filter-row" id="service-and-location-filter-row" style="padding:6px 14px; background:#be5900;">
       <div style="display:flex; gap:10px; align-items:center;">
@@ -1158,7 +1159,7 @@
         <button class="filter-btn" id="category-filter-btn" onclick="openCategorySheet()" style="color:white;">All Services</button>
       </div>
       <div style="margin-left:auto;">
-        <button class="filter-btn" id="place-a-btn" onclick="openLocationSheet('placeA')" style="color:white; font-size:14px;">Nation Wide</button>
+        <button class="filter-btn" id="place-a-btn" onclick="openLocationSheet('placeA')" style="color:white;">Nation Wide</button>
       </div>
     </div>
     <div class="filter-row" id="tradesman-type-and-location-filter-row" style="padding:6px 14px; background:#be5900; display:none;">
@@ -1168,7 +1169,7 @@
         <button class="filter-btn" id="tradesmen-filter-btn" onclick="openTradesmenSheet()" style="color:white;">All Tradesmen</button>
       </div>
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; margin-left:auto;">
-        <button class="filter-btn" id="place-a-btn-pro" onclick="openLocationSheet('placeA')" style="color:white; font-size:14px;">Nation Wide</button>
+        <button class="filter-btn" id="place-a-btn-pro" onclick="openLocationSheet('placeA')" style="color:white;">Nation Wide</button>
       </div>
     </div>
   </div>
@@ -1180,6 +1181,12 @@
     <a class="nav-item" id="nav-notes" onclick="navTab('view-notes','nav-notes')"><img src="assets/icons/solid/clipboard-list_inactive.webp" class="nav-icon" alt="Notes" loading="eager"></a>
     <a class="nav-item" id="nav-account" onclick="navTab('view-account','nav-account')"><img src="assets/icons/solid/user-circle_inactive.webp" class="nav-icon" alt="Account" loading="eager"></a>
   </nav>
+
+  <!-- ── A-Z INDEX POPUP ── -->
+  <div id="az-popup" style="display:none;">
+    <div id="az-popup-overlay" onclick="closeAzIndex()"></div>
+    <div id="az-popup-body"></div>
+  </div>
 
   <!-- ── ACCOUNT SWITCHER MODAL ── -->
   <div class="modal-overlay" id="switcher-modal">
@@ -1349,7 +1356,7 @@
         </div>
 
         <!-- Contact sub-accordion (rendered dynamically by JS) -->
-        <div class="sub-accordion">
+        <div class="sub-accordion" id="biz-contact">
           <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Contact</div>
           <div class="sub-accordion-body" id="biz-contact-body">
             <p style="font-size:12px;color:var(--grey-dark);padding:8px 0;">Loading...</p>
@@ -2064,7 +2071,7 @@
   <script defer src="data/trade-skill-map.js"></script>
   <script defer src="data/demo-pro-skills.js"></script>
   <script defer src="skill-ratings.js"></script>
-  <script defer src="filter.js"></script>
+  <script defer src="filter.js?v=2"></script>
   <script defer src="navigation.js"></script>
   <script defer src="router.js"></script>
   <script defer src="promos.js"></script>

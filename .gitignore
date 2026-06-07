@@ -3,3 +3,6 @@ node_modules/
 drive-oauth-token.json
 foromane-config-oauth.json
 foromane-config.json
+.firebase/
+firebase-debug.log
+FIX_PLAN.md

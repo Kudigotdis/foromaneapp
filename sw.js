@@ -1,6 +1,6 @@
-// Foromane Service Worker v1
+// Foromane Service Worker v2
 
-var CACHE_NAME = 'foromane-cache-v1';
+var CACHE_NAME = 'foromane-cache-v2';
 var URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -9,8 +9,7 @@ var URLS_TO_CACHE = [
   '/backend-logic.js',
   '/db.js',
   '/user-state.js',
-  '/firebase-init.js',
-  '/admin/Admin.html',
+  '/firebase-config.js',
   '/admin/Admin.js',
   '/admin/AdminData.js'
 ];

@@ -28,7 +28,7 @@
 
   function getCurrentUser() {
     const u = (window.User && window.User.current) || null;
-    return u || { name: 'You', id: localStorage.getItem('foromane_user_id') || 'guest' };
+    return u || { name: 'You', id: localStorage.getItem('foromane_userId') || 'guest' };
   }
 
   function syncBoostCounter() {

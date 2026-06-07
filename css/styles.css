@@ -143,6 +143,7 @@ main::-webkit-scrollbar {
   font-family: var(--font-body);
   display: flex; align-items: center; gap: 4px;
 }
+#promo-type-btn, #dir-type-btn, #category-filter-btn, #tradesmen-filter-btn, #place-a-btn, #place-a-btn-pro { font-size: 16px; }
 .promo-filter-scroll {
   display: flex; gap: 6px; overflow-x: auto;
   white-space: nowrap; scrollbar-width: none;
@@ -296,7 +297,7 @@ nav#bottom-nav {
   padding: 12px 16px; background: var(--white);
 }
 .search-price-filter .btn { border-radius: 10px; }
-.price-filter-row { display: flex; gap: 12px; margin-bottom: 10px; }
+.price-filter-row { display: flex; gap: 12px; margin-bottom: 4px; }
 .price-filter-field { flex: 1; }
 .price-filter-field label {
   font-size: 10px; font-weight: 700; color: var(--orange);
@@ -329,12 +330,17 @@ nav#bottom-nav {
   display: block; width: 100%; padding: 11px 16px;
   border-radius: var(--radius); cursor: pointer; text-align: center; margin-top: 8px;
 }
-.btn-sm { padding: 8px 14px; font-size: 14px; margin-top: 6px; }
+.btn-sm { padding: 8px 14px; font-size: 14px; margin-top: 6px; border-radius: 10px; }
 #view-account .btn,
 #view-account .btn-outline {
   border-radius: 10px !important;
 }
-
+#category-modal .btn { border-radius: 10px; }
+#reg-submit-btn { border-radius: 10px; }
+#id-nationality { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+#view-login label { display: none; }
+#view-login input { text-align: center; border-radius: 10px; }
+#view-login .btn { border-radius: 10px; }
 /* ─── CARDS ─── */
 .card {
   background: var(--white);
@@ -411,7 +417,7 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
   flex-shrink: 0;
 }
 .avatar-square {
-  width: 55px; height: 55px; border-radius: 2px;
+  width: 70px; height: 70px; border-radius: 2px;
   background: rgba(200,200,200,0.2); color: white;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-head); font-size: 18px; font-weight: 700;
@@ -425,7 +431,7 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
 .qty-btn { width: 32px; height: 32px; background: var(--grey-light); border: none; font-size: 18px; font-weight: bold; border-radius: 4px; cursor: pointer; }
 .promo-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; width: 100%; }
 .promo-actions .promo-status-badge { position: static; }
-.action-btn { background: none; border: none; color: var(--grey-dark); font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 6px 12px; }
+.action-btn { background: none; border: none; color: var(--grey-dark); font-size: 19px; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 6px 12px; }
 .action-btn.liked { color: var(--orange); }
 .action-divider { color: var(--grey-light); font-size: 14px; user-select: none; }
 
@@ -542,7 +548,11 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
   color: var(--grey-dark);
   margin-top: 2px;
 }
-.field-row { margin-bottom: 12px; }
+.field-row { margin-bottom: 6px; }
+#acct-social-body .field-row,
+#reg-social-body .field-row { margin-bottom: 5px; margin-top: 0; }
+#acct-social-body .field-row input,
+#reg-social-body .field-row input { margin: 0; }
 .field-input {
   width: 100%; padding: 10px 12px;
   border: 1px solid var(--grey-light); border-radius: 6px;
@@ -554,6 +564,10 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
   background: #fff; box-shadow: 0 0 0 2px rgba(253,118,0,0.1);
 }
 .field-input::placeholder { color: #94a3b8; }
+#acct-location-body .field-input,
+#reg-location-body .field-input { text-align: center; }
+#acct-location-body .field-row,
+#reg-location-body .field-row { margin-bottom: 5px; }
 
 /* ─── PASSWORD TOGGLE ─── */
 .pw-toggle {
@@ -763,7 +777,7 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
   padding: 12px 20px; box-sizing: border-box; z-index: 10;
 }
 .bottom-bar-actions { display: flex; gap: 16px; }
-.btn-round { width: 40px; height: 40px; border-radius: 50%; background: var(--orange); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.btn-round { width: 40px; height: 40px; border-radius: 10px; background: var(--orange); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .icon-action { width: 24px; height: 24px; cursor: pointer; object-fit: contain; }
 .note-empty-state {
   text-align: center; padding: 80px 24px 40px;
@@ -1138,6 +1152,8 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
 .sub-accordion { background: var(--white); border: 1px solid var(--grey-light); border-radius: 6px; margin-bottom: 6px; overflow: hidden; }
 .sub-accordion-header { padding: 10px 12px; font-weight: 600; font-size: 13px; cursor: pointer; user-select: none; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
 .sub-accordion.open > .sub-accordion-header { background: var(--orange); color: white; }
+.sub-accordion-header.pro-header,
+.sub-accordion.open > .sub-accordion-header.pro-header { background: var(--orange); color: white; }
 .sub-accordion-body { display: none; padding: 4px 12px 12px; border-top: 1px solid var(--grey-light); }
 .sub-accordion.open .sub-accordion-body { display: block; }
 
@@ -1295,7 +1311,7 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
   font-size: 11px; font-weight: 700; z-index: 2;
 }
 .promo-status-badge.active { background: #2e7d32; color: white; }
-.promo-status-badge.ended { background: none; color: var(--orange); }
+.promo-status-badge.ended { background: none; color: var(--orange); font-size: 14px; font-weight: 800; }
 
 /* ─── PROMO KPI STRIP ─── */
 .promo-kpi {
@@ -2472,3 +2488,23 @@ label { font-size: 12px; font-weight: 600; color: var(--orange); text-transform:
 
 /* ─── PROMO BRAND LINE ─── */
 .promo-brand { font-size: 12px; color: var(--orange); font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 2px; }
+
+/* ─── LOGIN PAGE LINKS ─── */
+#view-login a { text-decoration: none; font-size: 19px; }
+
+/* ─── A-Z INDEX POPUP ─── */
+#az-popup {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 200; display: none;
+  align-items: center; justify-content: center;
+}
+#az-popup-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+#az-popup-body {
+  position: relative; pointer-events: auto;
+  background: var(--white); border-radius: 16px;
+  padding: 20px; width: 280px; max-height: 80vh;
+  overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}

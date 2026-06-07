@@ -273,8 +273,10 @@ async function init() {
 
 async function loadProfileFromDB() {
   if (!ForomaneDB.db) return;
+  var id = UserState && UserState.id;
+  if (!id || id === 'guest') return;
   try {
-    const saved = await ForomaneDB.get('users', 'user_current');
+    const saved = await ForomaneDB.get('profiles', id);
     if (saved) {
       UserState.set(saved.id || UserState.id, saved.name || UserState.name, saved.role || UserState.role, '', saved.town || UserState.town, saved.mobile || '');
       if (saved.interests && saved.interests.length > 0) {
