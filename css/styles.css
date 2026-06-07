@@ -337,7 +337,7 @@ nav#bottom-nav {
 }
 #category-modal .btn { border-radius: 10px; }
 #reg-submit-btn { border-radius: 10px; }
-#id-nationality { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+#id-nationality, #reg-id-nationality { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
 #view-login label { display: none; }
 #view-login input { text-align: center; border-radius: 10px; }
 #view-login .btn { border-radius: 10px; }

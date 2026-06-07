@@ -2,16 +2,16 @@
 
 var CACHE_NAME = 'foromane-cache-v2';
 var URLS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/auth.js',
-  '/account.js',
-  '/backend-logic.js',
-  '/db.js',
-  '/user-state.js',
-  '/firebase-config.js',
-  '/admin/Admin.js',
-  '/admin/AdminData.js'
+  './',
+  './index.html',
+  './auth.js',
+  './account.js',
+  './backend-logic.js',
+  './db.js',
+  './user-state.js',
+  './firebase-config.js',
+  './admin/Admin.js',
+  './admin/AdminData.js'
 ];
 
 self.addEventListener('install', function(event) {
@@ -53,8 +53,8 @@ self.addEventListener('push', function(event) {
   var title = data.title || 'Foromane';
   var options = {
     body: data.body || '',
-    icon: '/assets/icons/icon-192.png',
-    badge: '/assets/icons/icon-192.png',
+    icon: './assets/icons/icon-192.png',
+    badge: './assets/icons/icon-192.png',
     data: data
   };
   event.waitUntil(
@@ -64,7 +64,7 @@ self.addEventListener('push', function(event) {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  var url = event.notification.data && event.notification.data.url ? event.notification.data.url : '/';
+  var url = event.notification.data && event.notification.data.url ? event.notification.data.url : './';
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then(function(clientList) {
       for (var i = 0; i < clientList.length; i++) {

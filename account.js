@@ -212,7 +212,7 @@ function hideDropdown(id) {
 function selectDropdownItem(inputId, dropdownId, value) {
   document.getElementById(inputId).value = value;
   hideDropdown(dropdownId);
-  if (inputId === 'loc-town') {
+  if (inputId === 'loc-town' || inputId === 'reg-loc-town') {
     onTownChange(value);
     onTownInput(value);
   } else {
@@ -234,32 +234,37 @@ function renderDropdownItems(dropdownId, items, inputId, filter) {
   el.classList.add('show');
 }
 
+// ─── Location ID prefix helper (account vs register page) ───
+function _locId(id) {
+  return (document.getElementById('view-register')?.classList.contains('active') ? 'reg-' : '') + id;
+}
+
 // ─── Country ───
 
 function onCountryChange(country) {
   regCountry = country;
   populateTownDropdown();
-  var townInput = document.getElementById('loc-town');
-  var areaInput = document.getElementById('loc-area');
+  var townInput = document.getElementById(_locId('loc-town'));
+  var areaInput = document.getElementById(_locId('loc-area'));
   if (townInput) townInput.value = '';
   if (areaInput) areaInput.value = '';
-  var areaDd = document.getElementById('loc-area-dropdown');
+  var areaDd = document.getElementById(_locId('loc-area-dropdown'));
   if (areaDd) areaDd.innerHTML = '';
-  document.getElementById('add-town-container').style.display = 'none';
-  document.getElementById('add-area-container').style.display = 'none';
+  document.getElementById(_locId('add-town-container')).style.display = 'none';
+  document.getElementById(_locId('add-area-container')).style.display = 'none';
 }
 
 // ─── Village / Town / City ───
 
 function populateTownDropdown() {
-  renderDropdownItems('loc-town-dropdown', getMergedTowns(), 'loc-town', '');
-  hideDropdown('loc-town-dropdown');
+  renderDropdownItems(_locId('loc-town-dropdown'), getMergedTowns(), _locId('loc-town'), '');
+  hideDropdown(_locId('loc-town-dropdown'));
 }
 
 function onTownInput(value) {
-  renderDropdownItems('loc-town-dropdown', getMergedTowns(), 'loc-town', value);
-  var container = document.getElementById('add-town-container');
-  var nameSpan = document.getElementById('add-town-name');
+  renderDropdownItems(_locId('loc-town-dropdown'), getMergedTowns(), _locId('loc-town'), value);
+  var container = document.getElementById(_locId('add-town-container'));
+  var nameSpan = document.getElementById(_locId('add-town-name'));
   if (!container || !nameSpan) return;
   if (!value.trim()) { container.style.display = 'none'; return; }
   var merged = getMergedTowns();
@@ -277,29 +282,29 @@ function onTownChange(value) {
   if (value === prev) return;
   UserState.updateLocation('town', value);
   UserState.updateLocation('area', '');
-  var areaInput = document.getElementById('loc-area');
+  var areaInput = document.getElementById(_locId('loc-area'));
   if (areaInput) areaInput.value = '';
   populateAreaDropdown(value);
-  document.getElementById('add-town-container').style.display = 'none';
-  document.getElementById('add-area-container').style.display = 'none';
+  document.getElementById(_locId('add-town-container')).style.display = 'none';
+  document.getElementById(_locId('add-area-container')).style.display = 'none';
 }
 
 function submitNewTown() {
-  var nameSpan = document.getElementById('add-town-name');
-  var townInput = document.getElementById('loc-town');
+  var nameSpan = document.getElementById(_locId('add-town-name'));
+  var townInput = document.getElementById(_locId('loc-town'));
   if (!nameSpan || !townInput) return;
   var townName = nameSpan.textContent.trim();
   if (!townName) return;
   var merged = getMergedTowns();
   if (merged.indexOf(townName) !== -1) {
-    document.getElementById('add-town-container').style.display = 'none';
+    document.getElementById(_locId('add-town-container')).style.display = 'none';
     showToast('This town is already in the database');
     return;
   }
   window.submittedTownsCache.push({ country: regCountry, town: townName });
   townInput.value = townName;
   onTownChange(townName);
-  document.getElementById('add-town-container').style.display = 'none';
+  document.getElementById(_locId('add-town-container')).style.display = 'none';
   showToast('"' + townName + '" added to database');
   if (typeof window.submitAreaToFirestore === 'function') {
     window.submitAreaToFirestore(regCountry, townName, '');
@@ -309,18 +314,18 @@ function submitNewTown() {
 // ─── Area / Neighbourhood ───
 
 function populateAreaDropdown(townName) {
-  renderDropdownItems('loc-area-dropdown', getMergedAreas(townName), 'loc-area', '');
-  hideDropdown('loc-area-dropdown');
+  renderDropdownItems(_locId('loc-area-dropdown'), getMergedAreas(townName), _locId('loc-area'), '');
+  hideDropdown(_locId('loc-area-dropdown'));
 }
 
 function onAreaInput(value) {
-  renderDropdownItems('loc-area-dropdown', getMergedAreas(document.getElementById('loc-town').value), 'loc-area', value);
+  renderDropdownItems(_locId('loc-area-dropdown'), getMergedAreas(document.getElementById(_locId('loc-town')).value), _locId('loc-area'), value);
 
-  var container = document.getElementById('add-area-container');
-  var nameSpan = document.getElementById('add-area-name');
+  var container = document.getElementById(_locId('add-area-container'));
+  var nameSpan = document.getElementById(_locId('add-area-name'));
   if (!container || !nameSpan) return;
   if (!value.trim()) { container.style.display = 'none'; return; }
-  var dd = document.getElementById('loc-area-dropdown');
+  var dd = document.getElementById(_locId('loc-area-dropdown'));
   var exists = false;
   if (dd) {
     for (var i = 0; i < dd.children.length; i++) {
@@ -340,23 +345,23 @@ function onAreaChange(value) {
 }
 
 function submitNewArea() {
-  var nameSpan = document.getElementById('add-area-name');
-  var areaInput = document.getElementById('loc-area');
-  var townInput = document.getElementById('loc-town');
+  var nameSpan = document.getElementById(_locId('add-area-name'));
+  var areaInput = document.getElementById(_locId('loc-area'));
+  var townInput = document.getElementById(_locId('loc-town'));
   if (!nameSpan || !areaInput || !townInput) return;
   var areaName = nameSpan.textContent.trim();
   var townName = townInput.value.trim();
   if (!areaName || !townName) return;
   var merged = getMergedAreas(townName);
   if (merged.indexOf(areaName) !== -1) {
-    document.getElementById('add-area-container').style.display = 'none';
+    document.getElementById(_locId('add-area-container')).style.display = 'none';
     showToast('This area is already in the database');
     return;
   }
   window.submittedAreasCache.push({ country: regCountry, town: townName, area: areaName });
   areaInput.value = areaName;
   onAreaChange(areaName);
-  document.getElementById('add-area-container').style.display = 'none';
+  document.getElementById(_locId('add-area-container')).style.display = 'none';
   showToast('"' + areaName + '" added to database');
   if (typeof window.submitAreaToFirestore === 'function') {
     window.submitAreaToFirestore(regCountry, townName, areaName);
@@ -617,7 +622,7 @@ function syncDobToNative() {
   var d = document.getElementById('dob-day').value;
   var m = document.getElementById('dob-month').value;
   var y = document.getElementById('dob-year').value;
-  var native = document.getElementById('id-dob');
+  var native = document.getElementById('reg-id-dob');
   if (!native) return;
   if (d && m && y) {
     native.value = y + '-' + m + '-' + d;
@@ -645,12 +650,12 @@ function handleRegPhotoSelect(event) {
 function updateRegTally() {
   const fields = {
     'Photo': !!document.getElementById('reg-photo-preview')?.src,
-    'First Name': document.getElementById('id-firstname')?.value.trim(),
-    'Surname': document.getElementById('id-surname')?.value.trim(),
-    'Username': document.getElementById('id-username')?.value.trim(),
-    'DOB': document.getElementById('id-dob')?.value,
+    'First Name': document.getElementById('reg-id-firstname')?.value.trim(),
+    'Surname': document.getElementById('reg-id-surname')?.value.trim(),
+    'Username': document.getElementById('reg-id-username')?.value.trim(),
+    'DOB': document.getElementById('reg-id-dob')?.value,
     'Gender': UserState.gender,
-    'Nationality': document.getElementById('id-nationality')?.value,
+    'Nationality': document.getElementById('reg-id-nationality')?.value,
     'Race': (function(){ var c=document.querySelectorAll('#race-checkboxes .race-chip.active'); return c.length>0; })(),
     'Mobile': UserState.contacts.mobiles.length > 0,
     'WhatsApp': UserState.contacts.whatsapps.length > 0,
@@ -2132,14 +2137,14 @@ async function requestNotificationPermission() {
 function showLocalNotification(title, body) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
-    new Notification(title, { body: body, icon: '/assets/icons/icon-192.png' });
+    new Notification(title, { body: body, icon: './assets/icons/icon-192.png' });
   } catch (e) { console.warn('Notification failed:', e); }
 }
 
 // Register service worker for push notifications
 if ('serviceWorker' in navigator && !window._swRegistered) {
   window._swRegistered = true;
-  navigator.serviceWorker.register('/sw.js').catch(function(e) {
+  navigator.serviceWorker.register('sw.js').catch(function(e) {
     console.warn('Service worker registration failed:', e);
   });
 }

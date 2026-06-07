@@ -1445,7 +1445,7 @@ async function _requestNotifyPerm() {
 
 function _showLocalNotify(title, body) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  try { new Notification(title, { body: body, icon: '/assets/icons/icon-192.png' }); } catch (e) {}
+  try { new Notification(title, { body: body, icon: './assets/icons/icon-192.png' }); } catch (e) {}
 }
 
 async function subscribeUserToPush() {

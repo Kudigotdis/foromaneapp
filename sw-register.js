@@ -5,7 +5,7 @@ async function registerForomaneSW() {
   if (!('serviceWorker' in navigator)) return { ok:false, reason: 'No SW support' };
 
   try {
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    const reg = await navigator.serviceWorker.register('sw.js');
     console.log('Foromane SW registered', reg);
 
     // If background sync is supported, expose a helper to register it

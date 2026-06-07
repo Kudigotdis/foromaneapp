@@ -315,10 +315,10 @@ const Auth = {
   },
 
   async register() {
-    const firstName = document.getElementById('id-firstname').value.trim();
-    const surname = document.getElementById('id-surname').value.trim();
+    const firstName = document.getElementById('reg-id-firstname').value.trim();
+    const surname = document.getElementById('reg-id-surname').value.trim();
     const email = document.getElementById('reg-email').value.trim();
-    const town = document.getElementById('loc-town').value;
+    const town = document.getElementById('reg-loc-town').value;
     const password = document.getElementById('reg-password').value;
     const confirm = document.getElementById('reg-confirm').value;
     const errorEl = document.getElementById('register-error');
@@ -328,7 +328,7 @@ const Auth = {
       errorEl.textContent = 'Please enter your first name and surname.';
       errorEl.style.display = 'block'; return;
     }
-    var dob = document.getElementById('id-dob').value;
+    var dob = document.getElementById('reg-id-dob').value;
     if (dob) {
       var age = new Date().getFullYear() - new Date(dob).getFullYear();
       var monthDiff = new Date().getMonth() - new Date(dob).getMonth();

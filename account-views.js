@@ -1227,7 +1227,7 @@
     updateMyCatalogueList();
 
     /* Populate register modal nationality dropdown */
-    var natSel = document.getElementById('id-nationality');
+    var natSel = document.getElementById('reg-id-nationality');
     if (natSel && window.NATIONALITIES_DATA && natSel.options.length <= 1) {
       window.NATIONALITIES_DATA.forEach(function(item) {
         var opt = document.createElement('option');

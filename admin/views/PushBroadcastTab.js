@@ -81,7 +81,7 @@ const PushBroadcastTab = {
       } else {
         // Fallback: show local notification
         if ('Notification' in window && Notification.permission === 'granted') {
-          try { new Notification(title, { body: body, icon: '/assets/icons/icon-192.png' }); } catch (e) {}
+          try { new Notification(title, { body: body, icon: './assets/icons/icon-192.png' }); } catch (e) {}
         }
         statusEl.textContent = 'Notification triggered locally.';
       }
@@ -98,7 +98,7 @@ const PushBroadcastTab = {
       try {
         new Notification('Test Notification from Foromane', {
           body: 'This is a test notification. Push notifications are working!',
-          icon: '/assets/icons/icon-192.png'
+          icon: './assets/icons/icon-192.png'
         });
         document.getElementById('push-status').textContent = 'Test notification sent!';
       } catch (e) {

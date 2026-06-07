@@ -882,13 +882,13 @@
               <input type="file" id="reg-photo-input" accept="image/*" style="display:none" onchange="handleRegPhotoSelect(event)">
             </div>
             <div class="field-row">
-              <input type="text" class="field-input" id="id-firstname" placeholder="First Name" value="" oninput="updateIdentityField('firstName', this.value);updateRegTally()">
+              <input type="text" class="field-input" id="reg-id-firstname" placeholder="First Name" value="" oninput="updateIdentityField('firstName', this.value);updateRegTally()">
             </div>
             <div class="field-row">
-              <input type="text" class="field-input" id="id-surname" placeholder="Surname" value="" oninput="updateIdentityField('surname', this.value);updateRegTally()">
+              <input type="text" class="field-input" id="reg-id-surname" placeholder="Surname" value="" oninput="updateIdentityField('surname', this.value);updateRegTally()">
             </div>
             <div class="field-row">
-              <input type="text" class="field-input" id="id-username" placeholder="Username" value="" oninput="updateIdentityField('username', this.value);updateRegTally()">
+              <input type="text" class="field-input" id="reg-id-username" placeholder="Username" value="" oninput="updateIdentityField('username', this.value);updateRegTally()">
             </div>
             <div class="field-row" style="flex-direction:column;">
               <label style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:4px;"><i class="fa-solid fa-cake-candles" style="margin-right:4px;"></i> Date of Birth</label>
@@ -908,7 +908,7 @@
                 </select>
               </div>
               <div style="font-size:12px;color:var(--grey-dark);margin-bottom:4px;"><i class="fa-solid fa-circle-info" style="color:var(--orange);margin-right:4px;"></i> Minimum age: 12 years</div>
-              <input type="date" id="id-dob" value="" max="" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;" onfocus="this.max=new Date(new Date().setFullYear(new Date().getFullYear()-12)).toISOString().split('T')[0]" oninput="updateIdentityField('dateOfBirth', this.value);updateRegTally()">
+              <input type="date" id="reg-id-dob" value="" max="" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;" onfocus="this.max=new Date(new Date().setFullYear(new Date().getFullYear()-12)).toISOString().split('T')[0]" oninput="updateIdentityField('dateOfBirth', this.value);updateRegTally()">
             </div>
             <div class="field-row">
               <div class="gender-toggle">
@@ -917,7 +917,7 @@
               </div>
             </div>
             <div class="field-row">
-              <select class="field-input" id="id-nationality" style="text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:none;" onchange="updateIdentityField('nationality', this.value);updateRegTally()">
+              <select class="field-input" id="reg-id-nationality" style="text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:none;" onchange="updateIdentityField('nationality', this.value);updateRegTally()">
                 <option value="" disabled selected>Select Nationality</option>
               </select>
             </div>
@@ -966,29 +966,29 @@
               </select>
             </div>
             <div class="field-row" id="reg-loc-town-row" style="position:relative;">
-              <input type="text" class="field-input" id="loc-town"
+              <input type="text" class="field-input" id="reg-loc-town"
                 placeholder="Village / Town / City" autocomplete="off"
                 oninput="onTownInput(this.value)" onchange="onTownChange(this.value)"
-                onfocus="showDropdown('loc-town-dropdown')"
-                onblur="setTimeout(function(){hideDropdown('loc-town-dropdown')},180)">
-              <div class="custom-dropdown" id="loc-town-dropdown"></div>
+                onfocus="showDropdown('reg-loc-town-dropdown')"
+                onblur="setTimeout(function(){hideDropdown('reg-loc-town-dropdown')},180)">
+              <div class="custom-dropdown" id="reg-loc-town-dropdown"></div>
             </div>
-            <div id="add-town-container" style="display:none;">
+            <div id="reg-add-town-container" style="display:none;">
               <button type="button" class="add-entry-btn" onclick="submitNewTown()">
-                <i class="fas fa-plus-circle"></i> Add "<span id="add-town-name"></span>" to database
+                <i class="fas fa-plus-circle"></i> Add "<span id="reg-add-town-name"></span>" to database
               </button>
             </div>
             <div class="field-row" id="reg-loc-area-row" style="position:relative;">
-              <input type="text" class="field-input" id="loc-area"
+              <input type="text" class="field-input" id="reg-loc-area"
                 placeholder="Area / Neighbourhood" autocomplete="off"
                 oninput="onAreaInput(this.value)" onchange="onAreaChange(this.value)"
-                onfocus="showDropdown('loc-area-dropdown')"
-                onblur="setTimeout(function(){hideDropdown('loc-area-dropdown')},180)">
-              <div class="custom-dropdown" id="loc-area-dropdown"></div>
+                onfocus="showDropdown('reg-loc-area-dropdown')"
+                onblur="setTimeout(function(){hideDropdown('reg-loc-area-dropdown')},180)">
+              <div class="custom-dropdown" id="reg-loc-area-dropdown"></div>
             </div>
-            <div id="add-area-container" style="display:none;">
+            <div id="reg-add-area-container" style="display:none;">
               <button type="button" class="add-entry-btn" onclick="submitNewArea()">
-                <i class="fas fa-plus-circle"></i> Add "<span id="add-area-name"></span>" to database
+                <i class="fas fa-plus-circle"></i> Add "<span id="reg-add-area-name"></span>" to database
               </button>
             </div>
           </div>
@@ -998,15 +998,15 @@
         <div class="sub-accordion" id="reg-social">
           <div class="sub-accordion-header" onclick="toggleSubAcc(this)">Social Media</div>
           <div class="sub-accordion-body" id="reg-social-body">
-            <div class="field-row"><input type="text" class="field-input" id="social_facebook" placeholder="Facebook (username or URL)" value="" onchange="updateSocialField('facebook', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_twitter" placeholder="Twitter / X" value="" onchange="updateSocialField('twitter', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_instagram" placeholder="Instagram" value="" onchange="updateSocialField('instagram', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_tiktok" placeholder="TikTok" value="" onchange="updateSocialField('tiktok', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_snapchat" placeholder="Snapchat" value="" onchange="updateSocialField('snapchat', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_youtube" placeholder="YouTube" value="" onchange="updateSocialField('youtube', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_pinterest" placeholder="Pinterest" value="" onchange="updateSocialField('pinterest', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_linkedin" placeholder="LinkedIn" value="" onchange="updateSocialField('linkedin', this.value)"></div>
-            <div class="field-row"><input type="text" class="field-input" id="social_telegram" placeholder="Telegram" value="" onchange="updateSocialField('telegram', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_facebook" placeholder="Facebook (username or URL)" value="" onchange="updateSocialField('facebook', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_twitter" placeholder="Twitter / X" value="" onchange="updateSocialField('twitter', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_instagram" placeholder="Instagram" value="" onchange="updateSocialField('instagram', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_tiktok" placeholder="TikTok" value="" onchange="updateSocialField('tiktok', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_snapchat" placeholder="Snapchat" value="" onchange="updateSocialField('snapchat', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_youtube" placeholder="YouTube" value="" onchange="updateSocialField('youtube', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_pinterest" placeholder="Pinterest" value="" onchange="updateSocialField('pinterest', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_linkedin" placeholder="LinkedIn" value="" onchange="updateSocialField('linkedin', this.value)"></div>
+            <div class="field-row"><input type="text" class="field-input" id="reg-social_telegram" placeholder="Telegram" value="" onchange="updateSocialField('telegram', this.value)"></div>
           </div>
         </div>
 
