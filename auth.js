@@ -668,7 +668,34 @@ const Auth = {
 
     closeModal('admin-pw-modal');
 
-    // 3. Persist admin ID for the session
+    // 3. Auto-register the current Firebase Auth user in the admins collection
+    //    so the Firestore rule allows reading all profiles in the admin dashboard.
+    try {
+      var _fb = window._ensureFirebase ? await window._ensureFirebase() : null;
+      if (_fb && _fb.firestore) {
+        // Re-auth fallback: try anonymous sign-in if no current user
+        if (_fb.auth && !_fb.auth.currentUser && _fb.authModule) {
+          try {
+            await _fb.authModule.signInAnonymously(_fb.auth);
+          } catch (e2) { /* anonymous auth unavailable */ }
+        }
+        if (_fb.auth && _fb.auth.currentUser) {
+          var _uid = _fb.auth.currentUser.uid;
+          var _adminRef = _fb.firestore.doc(_fb.db, 'admins', _uid);
+          var _adminDoc = await _fb.firestore.getDoc(_adminRef);
+          if (!_adminDoc.exists()) {
+            await _fb.firestore.setDoc(_adminRef, {
+              role: 'admin',
+              addedAt: _fb.firestore.serverTimestamp(),
+              registeredBy: 'system'
+            });
+          }
+          firebaseUid = _uid;
+        }
+      }
+    } catch (e) { console.warn('Admin auto-registration skipped:', e); }
+
+    // 4. Persist admin ID for the session
     var adminUserId = firebaseUid || 'admin';
     var adminName = 'Admin';
     if (firebaseUid && window.UserState && window.UserState.id !== 'guest') {

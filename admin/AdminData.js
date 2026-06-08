@@ -16,6 +16,11 @@ class AdminData {
       try {
         var fb = await window._ensureFirebase();
         if (fb && fb.firestore) {
+          if (fb.auth && !fb.auth.currentUser && fb.authModule) {
+            try {
+              await fb.authModule.signInAnonymously(fb.auth);
+            } catch (e2) { /* anonymous auth unavailable */ }
+          }
           this._fs = fb;
           return fb;
         }
@@ -332,6 +337,12 @@ class AdminData {
       users = users.filter(u => u.role === 'Pro' || u.role === 'Professional');
     }
     
+    users.sort(function(a, b) {
+      var aTime = (a.createdAt && (a.createdAt.seconds || a.createdAt._seconds)) || 0;
+      var bTime = (b.createdAt && (b.createdAt.seconds || b.createdAt._seconds)) || 0;
+      return bTime - aTime;
+    });
+
     return users;
   }
 

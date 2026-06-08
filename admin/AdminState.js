@@ -21,7 +21,10 @@ const AdminState = {
 
   setClientSub(sub) {
     this.clientListSub = sub;
-    this.render();
+    var contentEl = document.querySelector('.super-accordion.open .super-accordion-content');
+    if (contentEl && window.ClientListTab) {
+      window.ClientListTab.render(contentEl);
+    }
   },
 
   setApprovalFilter(filter) {
@@ -36,7 +39,6 @@ const AdminState = {
 
   setSearch(query) {
     this.searchQuery = query;
-    this.render();
   },
 
   setAlphaFilter(letter) {

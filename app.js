@@ -235,7 +235,7 @@ async function init() {
     console.warn('ForomaneMediaCache init failed (non-fatal):', err);
   }
 
-  if (!firebaseSessionProfile && !_isReturning) {
+  if (!firebaseSessionProfile && !_isReturning && !_appEntered) {
     document.getElementById('view-welcome')?.classList.add('active');
   }
   if (_isReturning && !_appEntered && typeof window.enterApp === 'function') {

@@ -571,12 +571,35 @@ const Admin = {
         </div>
       </div>
       <div style="background:var(--bg);min-height:calc(100vh - 80px);">
-        ${sections.map(s => this.renderSection(s.id, s.title, s.icon, s.badge, state.activeSection === s.id)).join('')}
+        ${sections.map(s => this.renderSectionOuter(s.id, s.title, s.icon, s.badge, state.activeSection === s.id)).join('')}
       </div>
     `;
+
+    if (state.activeSection && window[this._tabName(state.activeSection)]) {
+      this.renderSectionContentDOM(state.activeSection);
+    }
   },
 
-  renderSection(id, title, icon, badge, isOpen) {
+  _tabName(id) {
+    var map = {
+      client_list: 'ClientListTab',
+      overview: 'OverviewTab',
+      approvals: 'ApprovalsTab',
+      payments: 'PaymentTab',
+      moderation: 'ModerationTab',
+      feedback: 'FeedbackTab',
+      facebook: 'FacebookCalendarTab',
+      directory: 'DirectoryTab',
+      analytics: 'AnalyticsTab',
+      audit_log: 'AuditLogTab',
+      error_log: 'ErrorLogTab',
+      push_broadcast: 'PushBroadcastTab',
+      admin_mgmt: 'AdminManagementTab'
+    };
+    return map[id] || '';
+  },
+
+  renderSectionOuter(id, title, icon, badge, isOpen) {
     return `
       <div class="super-accordion ${isOpen ? 'open' : ''}" data-section="${id}">
         <div class="super-accordion-header" onclick="AdminState.toggleSection('${id}')">
@@ -587,11 +610,19 @@ const Admin = {
           </div>
           <i class="fas fa-chevron-down super-accordion-icon"></i>
         </div>
-        <div class="super-accordion-content">
-          ${isOpen ? this.renderSectionContent(id) : ''}
-        </div>
+        <div class="super-accordion-content"></div>
       </div>
     `;
+  },
+
+  renderSectionContentDOM(sectionId) {
+    var contentEl = document.querySelector('.super-accordion.open .super-accordion-content');
+    if (!contentEl) return;
+    if (sectionId === 'client_list') {
+      window.ClientListTab.render(contentEl);
+    } else {
+      contentEl.innerHTML = this.renderSectionContent(sectionId);
+    }
   },
 
   renderSectionContent(id) {
@@ -783,7 +814,7 @@ const Admin = {
     const biz = assoc ? this.data.businessMap[assoc.businessId] : null;
     
     const safeName = user.name ? encodeURIComponent(user.name.replace(/\s+/g, ' ')) : '';
-    const imgSrc = window.assetUrl(user.image || (safeName ? `assets/images/profile_pictures_dummy/${safeName}.jpg` : `assets/images/profile_pictures_dummy/demo-profile.jpg`));
+    const imgSrc = window.assetUrl(user.image || (safeName ? 'assets/images/profile_pictures_dummy/' + safeName + '.jpg' : 'assets/images/profile_pictures_dummy/demo-profile.jpg'));
     
     const modal = document.getElementById('user-detail-modal') || this.createUserDetailModal();
     document.body.appendChild(modal);
@@ -794,54 +825,156 @@ const Admin = {
       : status === 'banned' ? '<span style="background:#ffebee;color:#c62828;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">Banned</span>'
       : '';
 
-    modal.innerHTML = `
-      <div class="biz-card-content">
-        <div class="biz-card-header">
-          <div class="biz-card-header-row">
-            <img src="${imgSrc}" style="width:48px;height:48px;border-radius:12px;object-fit:cover;"
-              onerror="this.outerHTML='<div class=\\'biz-card-avatar\\'>${user.initials || 'U'}</div>'">
-            <div>
-              <div class="biz-card-name">${user.name || 'Unknown'}</div>
-              <div class="biz-card-meta">${user.email || ''}</div>
-            </div>
-          </div>
-          <div class="biz-card-close" onclick="this.closest('.biz-card-modal').classList.remove('open')">✕</div>
-        </div>
-        <div class="biz-card-body">
-          <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
-            <span style="background:var(--orange-light);color:var(--orange);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">${user.role || 'General User'}</span>
-            ${statusBadge}
-          </div>
-          
-          <div class="biz-card-section">
-            <div class="biz-card-section-title">CONTACT</div>
-            <div class="biz-card-item"><span>Phone</span><span>${user.phone || 'N/A'}</span></div>
-            <div class="biz-card-item"><span>Email</span><span>${user.email || 'N/A'}</span></div>
-            <div class="biz-card-item"><span>Town</span><span>${user.town || 'N/A'}</span></div>
-          </div>
-          
-          ${biz ? `
-          <div class="biz-card-section">
-            <div class="biz-card-section-title">BUSINESS</div>
-            <div class="biz-card-item"><span>Business</span><span>${biz.name}</span></div>
-            <div class="biz-card-item"><span>Role</span><span style="text-transform:capitalize;">${assoc?.role || 'Owner'}</span></div>
-          </div>
-          ` : ''}
-          
-          <div class="biz-card-actions">
-            ${status === 'active' ? `
-              <button class="biz-card-suspend" onclick="Admin.suspendUser('${userId}')">Suspend</button>
-              <button class="biz-card-ban" onclick="Admin.banUser('${userId}')">Ban</button>
-            ` : status === 'suspended' ? `
-              <button class="biz-card-suspend" onclick="Admin.banUser('${userId}')" style="background:#ffebee;color:#c62828;border-color:#c62828;">Ban</button>
-              <button class="btn-sm" onclick="Admin.reactivateUser('${userId}')" style="background:#e8f5e9;color:#2e7d32;">Reactivate</button>
-            ` : status === 'banned' ? `
-              <button class="btn-sm" onclick="Admin.reactivateUser('${userId}')" style="background:#e8f5e9;color:#2e7d32;">Reactivate</button>
-            ` : ''}
-          </div>
-        </div>
-      </div>
-    `;
+    var displayName = (user.firstName || '') + ' ' + (user.surname || '');
+    if (!displayName.trim()) displayName = user.name || 'Unknown';
+    var usernameLine = user.username ? '<div class="biz-card-item"><span>Username</span><span>@' + user.username + '</span></div>' : '';
+    var userEmail = user.email || user.cloudEmail || '';
+    
+    var regDate = '';
+    if (user.createdAt) {
+      var s = user.createdAt.seconds || user.createdAt._seconds;
+      if (s) { var d = new Date(s * 1000); regDate = d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    }
+    
+    // ── Personal info ──
+    var personalHtml = '';
+    if (user.dateOfBirth || user.gender || user.nationality || user.race) {
+      personalHtml = '<div class="biz-card-section"><div class="biz-card-section-title">PERSONAL INFO</div>' +
+        (user.dateOfBirth ? '<div class="biz-card-item"><span>Date of Birth</span><span>' + user.dateOfBirth + '</span></div>' : '') +
+        (user.gender ? '<div class="biz-card-item"><span>Gender</span><span>' + user.gender + '</span></div>' : '') +
+        (user.nationality ? '<div class="biz-card-item"><span>Nationality</span><span>' + user.nationality + '</span></div>' : '') +
+        (user.race ? '<div class="biz-card-item"><span>Race</span><span>' + user.race + '</span></div>' : '') +
+      '</div>';
+    }
+    
+    // ── Contacts ──
+    var contacts = user.contacts || { mobiles: [], whatsapps: [], social: {} };
+    var contactHtml = '<div class="biz-card-section"><div class="biz-card-section-title">CONTACT</div>' +
+      (user.primaryMobile ? '<div class="biz-card-item"><span>Primary Mobile</span><span>' + user.primaryMobile + '</span></div>' : (user.phone ? '<div class="biz-card-item"><span>Primary Mobile</span><span>' + user.phone + '</span></div>' : '')) +
+      (user.primaryWhatsApp ? '<div class="biz-card-item"><span>Primary WhatsApp</span><span>' + user.primaryWhatsApp + '</span></div>' : '');
+    
+    if (contacts.mobiles && contacts.mobiles.length > 0) {
+      contacts.mobiles.forEach(function(m, i) {
+        if (m.number && !(i === 0 && user.primaryMobile && m.number === user.primaryMobile)) {
+          var label = m.isPrimary ? 'Mobile (Primary)' : 'Mobile ' + (i + 1);
+          contactHtml += '<div class="biz-card-item"><span>' + label + '</span><span>' + (m.countryCode || '') + m.number + '</span></div>';
+        }
+      });
+    }
+    if (contacts.whatsapps && contacts.whatsapps.length > 0) {
+      contacts.whatsapps.forEach(function(w, i) {
+        if (w.number && !(i === 0 && user.primaryWhatsApp && w.number === user.primaryWhatsApp)) {
+          var label = w.isPrimary ? 'WhatsApp (Primary)' : 'WhatsApp ' + (i + 1);
+          contactHtml += '<div class="biz-card-item"><span>' + label + '</span><span>' + (w.countryCode || '') + w.number + '</span></div>';
+        }
+      });
+    }
+    contactHtml += (userEmail ? '<div class="biz-card-item"><span>Email</span><span>' + userEmail + '</span></div>' : '') +
+      '<div class="biz-card-item"><span>Registered</span><span>' + (regDate || 'N/A') + '</span></div>' +
+    '</div>';
+    
+    // ── Location ──
+    var loc = user.location || {};
+    var townVal = loc.town || user.town || '';
+    var areaVal = loc.area || '';
+    var locationHtml = '';
+    if (townVal || areaVal) {
+      locationHtml = '<div class="biz-card-section"><div class="biz-card-section-title">LOCATION</div>' +
+        (townVal ? '<div class="biz-card-item"><span>Village/Town/City</span><span>' + townVal + '</span></div>' : '') +
+        (areaVal ? '<div class="biz-card-item"><span>Area/Neighbourhood</span><span>' + areaVal + '</span></div>' : '') +
+      '</div>';
+    }
+    
+    // ── Social Media ──
+    var social = contacts.social || {};
+    var socialKeys = Object.keys(social);
+    var socialHtml = '';
+    if (socialKeys.length > 0) {
+      socialHtml = '<div class="biz-card-section"><div class="biz-card-section-title">SOCIAL MEDIA</div>';
+      socialKeys.forEach(function(platform) {
+        var val = social[platform];
+        if (val) socialHtml += '<div class="biz-card-item"><span style="text-transform:capitalize;">' + platform + '</span><span>' + val + '</span></div>';
+      });
+      socialHtml += '</div>';
+    }
+    
+    // ── Interests/Categories ──
+    var interests = user.interests || [];
+    var interestsHtml = '';
+    if (interests.length > 0) {
+      interestsHtml = '<div class="biz-card-section"><div class="biz-card-section-title">INTERESTS / CATEGORIES</div>' +
+        '<div style="padding:4px 0;display:flex;flex-wrap:wrap;gap:6px;">' +
+        interests.map(function(c) {
+          var name = c.name || c;
+          return '<span style="background:var(--orange-light);color:var(--orange);padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;">' + name + '</span>';
+        }).join('') +
+        '</div></div>';
+    }
+    
+    // ── Pro Account info ──
+    var proHtml = '';
+    var isPro = user.role === 'Tradesperson (Contractor)' || user.role === 'Business & Materials Supplier' || user.role === 'Pro' || user.role === 'Professional';
+    if (isPro) {
+      proHtml = '<div class="biz-card-section"><div class="biz-card-section-title">PRO ACCOUNT</div>' +
+        '<div class="biz-card-item"><span>Trade Role</span><span>' + (user.role || 'N/A') + '</span></div>' +
+        (user.tradeCategory ? '<div class="biz-card-item"><span>Trade Category</span><span>' + user.tradeCategory + '</span></div>' : '') +
+        (user.specialty ? '<div class="biz-card-item"><span>Specialty</span><span>' + user.specialty + '</span></div>' : '');
+      if (user.businessInfo && user.businessInfo.name) {
+        proHtml += '<div class="biz-card-item"><span>Business Name</span><span>' + user.businessInfo.name + '</span></div>';
+      }
+      if (user.skills && user.skills.length > 0) {
+        proHtml += '<div class="biz-card-item"><span>Skills</span><span>' + user.skills.join(', ') + '</span></div>';
+      }
+      proHtml += '</div>';
+    }
+    
+    // ── Businesses ──
+    var bizHtml = '';
+    if (biz) {
+      bizHtml = '<div class="biz-card-section"><div class="biz-card-section-title">BUSINESS</div>' +
+        '<div class="biz-card-item"><span>' + biz.name + '</span><span style="text-transform:capitalize;">' + (assoc?.role || 'Owner') + '</span></div>' +
+      '</div>';
+    }
+
+    modal.innerHTML =
+      '<div class="biz-card-content">' +
+        '<div class="biz-card-header">' +
+          '<div class="biz-card-header-row">' +
+            '<img src="' + imgSrc + '" style="width:48px;height:48px;border-radius:12px;object-fit:cover;"' +
+              ' onerror="this.outerHTML=\'<div class=\\\'biz-card-avatar\\\'>' + (user.initials || 'U') + '</div>\'">' +
+            '<div>' +
+              '<div class="biz-card-name">' + displayName + '</div>' +
+              '<div class="biz-card-meta">' + userEmail + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="biz-card-close" onclick="this.closest(\'.biz-card-modal\').classList.remove(\'open\')">\u2715</div>' +
+        '</div>' +
+        '<div class="biz-card-body">' +
+          '<div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+            '<span style="background:var(--orange-light);color:var(--orange);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">' + (user.role || 'General User') + '</span>' +
+            statusBadge +
+          '</div>' +
+          usernameLine +
+          personalHtml +
+          contactHtml +
+          locationHtml +
+          socialHtml +
+          interestsHtml +
+          proHtml +
+          bizHtml +
+          '<div class="biz-card-actions">' +
+            (status === 'active'
+              ? '<button class="biz-card-suspend" onclick="Admin.suspendUser(\'' + userId + '\')">Suspend</button>' +
+                '<button class="biz-card-ban" onclick="Admin.banUser(\'' + userId + '\')">Ban</button>'
+              : status === 'suspended'
+              ? '<button class="biz-card-suspend" onclick="Admin.banUser(\'' + userId + '\')" style="background:#ffebee;color:#c62828;border-color:#c62828;">Ban</button>' +
+                '<button class="btn-sm" onclick="Admin.reactivateUser(\'' + userId + '\')" style="background:#e8f5e9;color:#2e7d32;">Reactivate</button>'
+              : status === 'banned'
+              ? '<button class="btn-sm" onclick="Admin.reactivateUser(\'' + userId + '\')" style="background:#e8f5e9;color:#2e7d32;">Reactivate</button>'
+              : '') +
+          '</div>' +
+        '</div>' +
+      '</div>';
     
     modal.classList.add('open');
     modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('open'); };

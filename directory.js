@@ -255,6 +255,12 @@ function renderDirectory() {
   if (!el) return;
 
   if (dirMode === 'pros') {
+    // Clear virtual scroller state so _onDirScroll (still bound to scroll
+    // event from a previous Suppliers render) won't clobber the pro cards,
+    // and restore the container's CSS padding.
+    _dirRows = [];
+    _dirScrollEl = null;
+    el.style.cssText = '';
     renderPros(el);
     return;
   }
@@ -308,7 +314,11 @@ function renderDirectory() {
 
   if (selectedCategories.length > 0) {
     businesses = businesses.filter(function(b) {
-      return selectedCategories.some(function(c) { return c.name === b.category; });
+      return selectedCategories.some(function(c) {
+        if (c.name === b.category) return true;
+        if (b.categories && b.categories.length > 0 && b.categories.indexOf(c.name) !== -1) return true;
+        return false;
+      });
     });
   }
 
@@ -324,7 +334,7 @@ function renderDirectory() {
   businesses.sort((a, b) => a.name.localeCompare(b.name));
 
   // ── Virtual scroller: build layout, render visible slice ──
-  const HEADER_H = 39;
+  const HEADER_H = 44.4;
   const CARD_H = 84;
   var letterGroups = {};
   businesses.forEach(function(b) {
@@ -343,8 +353,9 @@ function renderDirectory() {
   var top = 0;
   _dirRows = [];
   sortedLetters.forEach(function(letter) {
+    if (top > 0) top += 17;
     _dirRows.push({ type: 'header', letter: letter, top: top, height: HEADER_H });
-    top += HEADER_H;
+    top += HEADER_H + 10;
     letterGroups[letter].forEach(function(biz) {
       _dirRows.push({ type: 'card', biz: biz, top: top, height: CARD_H });
       top += CARD_H;
@@ -354,6 +365,10 @@ function renderDirectory() {
 
   var scroller = el.parentElement;
   if (scroller) _dirScrollEl = scroller;
+
+  // Reset dropdown shift state
+  _dirOpenRowIndex = -1;
+  _dirExtraHeight = 0;
 
   // Inner container sizing
   el.style.cssText = 'position:relative;height:' + _dirTotalH + 'px;padding:0;';
@@ -367,10 +382,18 @@ function renderDirectory() {
 // ── Virtual scroller state ──
 var _dirRows = [];
 var _dirTotalH = 0;
+var _dirOpenRowIndex = -1;
+var _dirExtraHeight = 0;
+var _DIR_DROPDOWN_H = 80;
 var _dirScrollEl = null;
 
 function _onDirScroll() {
-  if (!_dirScrollEl || _dirRows.length === 0) return;
+  // Lazily re-acquire scroll container if null (e.g. after pros → suppliers switch)
+  if (!_dirScrollEl || !_dirScrollEl.parentNode) {
+    var list = document.getElementById('directory-list');
+    if (list && list.parentElement) _dirScrollEl = list.parentElement;
+  }
+  if (!_dirScrollEl || _dirRows.length === 0 || dirMode !== 'companies') return;
   var el = document.getElementById('directory-list');
   if (!el) return;
 
@@ -397,16 +420,24 @@ function _onDirScroll() {
   var html = '';
   for (var i = si; i < ei; i++) {
     var r = rows[i];
+    var shiftedTop = r.top;
+    var extraH = 0;
+    if (_dirOpenRowIndex >= 0 && i > _dirOpenRowIndex) {
+      shiftedTop += _dirExtraHeight;
+    }
+    if (_dirOpenRowIndex === i && r.type === 'card') {
+      extraH = _dirExtraHeight;
+    }
     if (r.type === 'header') {
-      html += '<div id="dir-header-' + r.letter + '" style="position:absolute;top:' + r.top + 'px;left:0;right:0;height:' + r.height + 'px;padding:8px 16px 4px;font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--orange);background:rgba(128,128,128,0.10);background-clip:padding-box;z-index:2;border-bottom:7px solid transparent;">' + r.letter + '</div>';
+      html += '<div id="dir-header-' + r.letter + '" style="position:absolute;top:' + shiftedTop + 'px;left:0;right:0;height:' + r.height + 'px;padding:8px 16px 3px;font-family:var(--font-head);font-size:18px;font-weight:700;color:#444444;background:rgba(128,128,128,0.10);background-clip:padding-box;z-index:2;">' + r.letter + '</div>';
     } else {
-      html += _vsCardHtml(r.biz, r.top, r.height);
+      html += _vsCardHtml(r.biz, shiftedTop, r.height, extraH, _dirOpenRowIndex === i);
     }
   }
   el.innerHTML = html;
 }
 
-function _vsCardHtml(b, top, height) {
+function _vsCardHtml(b, top, height, extraHeight, isOpen) {
   var ddId = 'dd-' + b.id;
   var nameEsc = b.name.replace(/'/g, "\\'");
   var locEsc = (b.location || '').replace(/'/g, "\\'");
@@ -427,7 +458,9 @@ function _vsCardHtml(b, top, height) {
       '<div class="dir-avatar" style="background:' + b.color + ';">' + b.initials + '</div>' +
       '</div>';
 
-  return '<div class="dir-card-group" style="position:absolute;top:' + top + 'px;left:16px;right:16px;height:' + height + 'px;">' +
+  var groupH = height + (extraHeight || 0);
+  var groupExtras = isOpen ? 'z-index:5;overflow:visible;' : '';
+  return '<div class="dir-card-group" style="position:absolute;top:' + top + 'px;left:16px;right:16px;height:' + groupH + 'px;' + groupExtras + '" data-biz-id="' + b.id + '">' +
     '<div class="dir-card" onclick="toggleDirDropdown(\'' + ddId + '\')">' +
       avatarHtml +
       '<div class="dir-info">' +
@@ -436,7 +469,7 @@ function _vsCardHtml(b, top, height) {
       '</div>' +
       bIdHtml +
     '</div>' +
-    '<div class="dropdown-actions-container" id="' + ddId + '">' +
+    '<div class="dropdown-actions-container' + (isOpen ? ' open' : '') + '" id="' + ddId + '">' +
       _buildDirCardDropdownHtml(b.id, nameEsc, phoneClean, locEsc, false, b.isUserBiz, b.isUnclaimed) +
     '</div>' +
   '</div>';
@@ -449,8 +482,12 @@ scrollToAlpha = function(letter) {
   if (rows.length > 0) {
     for (var i = 0; i < rows.length; i++) {
       if (rows[i].type === 'header' && rows[i].letter === letter) {
+        var adjustedTop = rows[i].top;
+        if (_dirOpenRowIndex >= 0 && i > _dirOpenRowIndex) {
+          adjustedTop += _dirExtraHeight;
+        }
         var scroller = _dirScrollEl || document.querySelector('.dir-scroll');
-        if (scroller) { scroller.scrollTop = rows[i].top; return; }
+        if (scroller) { scroller.scrollTop = adjustedTop; return; }
         break;
       }
     }
@@ -471,10 +508,12 @@ function renderPros(el) {
   if (selectedTrades.length > 0) {
     pros = pros.filter(function(p) {
       return selectedTrades.some(function(tradeKey) {
-        var pId = p.id || '';
+        var tradeLabel = tradeKey.replace(/_/g, ' ').toLowerCase();
+        var pRole = (p.role || '').toLowerCase();
+        var pSpecialty = (p.specialty || '').toLowerCase();
+        var pTradeCat = (p.tradeCategory || '').toLowerCase();
         var pName = (p.name || '').toLowerCase();
-        var tradeWords = tradeKey.replace(/_/g, ' ').toLowerCase();
-        return pId.toLowerCase().indexOf(tradeKey.replace(/_.*$/, '')) !== -1 || tradeWords.split(' ').some(function(w) { return pName.indexOf(w) !== -1; });
+        return pRole.indexOf(tradeLabel) !== -1 || pSpecialty.indexOf(tradeLabel) !== -1 || pTradeCat.indexOf(tradeLabel) !== -1 || pName.indexOf(tradeLabel) !== -1;
       });
     });
   }
@@ -683,9 +722,6 @@ function openBizProfile(bizId, name, init, color, location, phone, isPublic, des
       ? '<div style="text-align:center;padding:8px 16px;margin:8px 12px;background:#e8f5e9;border-radius:8px;font-size:13px;color:var(--green,#27ae60);font-weight:600;"><i class="fas fa-check-circle"></i> This business has been claimed</div>'
       : '<div style="text-align:center;padding:12px 16px;margin:8px 12px;background:#fff3e0;border-radius:8px;"><p style="font-size:13px;color:var(--grey-dark);margin:0 0 8px;">Is this your business? Claim it to manage your profile, promos and catalogue.</p><button class="btn" onclick="event.stopPropagation();claimBusiness(\'' + bizId + '\',\'' + nameEsc + '\');goTo(\'view-directory\')" style="padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;"><i class="fas fa-hand-paper"></i> Claim this Business</button></div>')
     : ''}
-    <div style="text-align:center;padding:6px 0;">
-      <span style="font-size:11px;color:var(--grey-dark);cursor:pointer;" onclick="reportBusiness('${bizId}','${nameEsc}')">Report this business</span>
-    </div>
     <div class="biz-bottom-wrapper">
       <div class="biz-bottom-bar">
         <div id="biz-bar-actions">
@@ -836,12 +872,6 @@ window.openProProfile = window.openProProfile || function(proId) {
 
   var skillsBody = '';
 
-  var projectsBody = '<div class="project-carousel">' +
-    '<div class="project-card">' +
-      '<div class="project-card-body"><p style="font-size:12px;color:var(--grey-dark);">No projects listed yet.</p></div>' +
-    '</div>' +
-  '</div>';
-
   var ratesBody = '<div class="rates-card">' +
     '<div class="rate-row"><span class="rate-label">Rate</span><span class="rate-value">Contact for pricing</span></div>' +
     (pro.locStr ? '<div class="rate-row"><span class="rate-label">Service Area</span><span class="rate-value" style="font-size:13px;color:var(--text-main);font-weight:400;">' + pro.locStr + '</span></div>' : '') +
@@ -875,13 +905,6 @@ window.openProProfile = window.openProProfile || function(proId) {
           '<span class="chevron" style="color:var(--grey-dark);font-size:12px;">\u25BC</span>' +
         '</div>' +
         '<div class="accordion-body">' + skillsBody + '</div>' +
-      '</div>' +
-      '<div class="accordion">' +
-        '<div class="accordion-header" onclick="toggleAcc(this)">' +
-          '<span><i class="fas fa-images" style="color:var(--orange);margin-right:8px;"></i> Projects</span>' +
-          '<span class="chevron" style="color:var(--grey-dark);font-size:12px;">\u25BC</span>' +
-        '</div>' +
-        '<div class="accordion-body">' + projectsBody + '</div>' +
       '</div>' +
       '<div class="accordion">' +
         '<div class="accordion-header" onclick="toggleAcc(this)">' +
@@ -1403,14 +1426,67 @@ function toggleDirDropdown(id) {
   var el = document.getElementById(id);
   if (!el) return;
   var group = el.closest('.dir-card-group');
+
   if (el.classList.contains('open')) {
+    // Close: reset shift
+    _dirOpenRowIndex = -1;
+    _dirExtraHeight = 0;
     el.classList.remove('open');
     if (group) { group.style.zIndex = ''; group.style.overflow = ''; }
-  } else {
-    closeDirDropdowns();
-    el.classList.add('open');
-    if (group) { group.style.zIndex = '5'; group.style.overflow = 'visible'; }
+    var container = document.getElementById('directory-list');
+    if (container) container.style.height = _dirTotalH + 'px';
+    _onDirScroll();
+    return;
   }
+
+  // Close any previously open dropdown first
+  if (_dirOpenRowIndex >= 0) {
+    var prevId = 'dd-' + _dirRows[_dirOpenRowIndex].biz.id;
+    var prevEl = document.getElementById(prevId);
+    if (prevEl) prevEl.classList.remove('open');
+  }
+
+  // Find the row index for this card
+  var bizId = id.replace('dd-', '');
+  var rowIdx = -1;
+  for (var i = 0; i < _dirRows.length; i++) {
+    if (_dirRows[i].type === 'card' && _dirRows[i].biz && _dirRows[i].biz.id === bizId) {
+      rowIdx = i;
+      break;
+    }
+  }
+
+  if (rowIdx < 0) {
+    // Card not found by ID — fall back to DOM position among .dir-card-group
+    var allGroups = document.querySelectorAll('#directory-list > .dir-card-group');
+    var groupIdx = Array.prototype.indexOf.call(allGroups, group);
+    if (groupIdx >= 0) {
+      var cardCount = 0;
+      for (var j = 0; j < _dirRows.length; j++) {
+        if (_dirRows[j].type === 'card') {
+          if (cardCount === groupIdx) { rowIdx = j; break; }
+          cardCount++;
+        }
+      }
+    }
+    if (rowIdx < 0) {
+      el.classList.add('open');
+      if (group) { group.style.zIndex = '5'; group.style.overflow = 'visible'; }
+      return;
+    }
+  }
+
+  // Set push-down state
+  var prevExtra = _dirExtraHeight;
+  _dirOpenRowIndex = rowIdx;
+  _dirExtraHeight = _DIR_DROPDOWN_H;
+
+  // Update container total height
+  var container = document.getElementById('directory-list');
+  if (container) container.style.height = (_dirTotalH + _dirExtraHeight) + 'px';
+
+  // Re-render with shifted positions (re-applies open state internally)
+  _onDirScroll();
 }
 
 function closeDirDropdowns() {
@@ -1419,6 +1495,11 @@ function closeDirDropdowns() {
     var group = el.closest('.dir-card-group');
     if (group) { group.style.zIndex = ''; group.style.overflow = ''; }
   });
+  _dirOpenRowIndex = -1;
+  _dirExtraHeight = 0;
+  var container = document.getElementById('directory-list');
+  if (container) container.style.height = _dirTotalH + 'px';
+  _onDirScroll();
 }
 
 function toggleBizPromo(id) {
